@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm[toml]"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "submarlin-postprocessing"
+description = "Post-processing tools for B. subtilis MARLIN genome-wide screens"
+readme = "README.md"
+requires-python = "3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Luis Gutierrez-Lopez", email = "gutiloluis@gmail.com"}]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "h5py",
+    "dask[complete]",
+    "anndata",
+    "scanpy"
+]
+
+[tool.setuptools]
+packages = ["submarlin_postprocessing"]
+
+[tool.setuptools_scm]
+write_to = "submarlin_postprocessing/_version.py"
