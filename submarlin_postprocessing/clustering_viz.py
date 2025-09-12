@@ -89,6 +89,22 @@ def adjust_growth_rate_base_e_to_2(df, columns:list):
         }
     )
 
+def compute_cmap_limits_df(clustering_df, control_phenotypes_df, kernel_labels_last_t, label_percentiles):
+    """
+    Compute color map limits DataFrame for clustering visualization.
+    """
+    return (
+        pd.DataFrame(index=label_percentiles.keys())
+        .rename_axis('key', axis='index')
+        .assign(
+            vmin=lambda df_: df_.index.map(lambda key: np.nanpercentile(clustering_df[kernel_labels_last_t[key]], label_percentiles[key])),
+            vmax=lambda df_: df_.index.map(lambda key: np.nanpercentile(clustering_df[kernel_labels_last_t[key]], 100 - label_percentiles[key])),
+            median_control=lambda df_: df_.index.map(lambda key: control_phenotypes_df[kernel_labels_last_t[key]].median()),
+            ranges=lambda df_: np.maximum(df_['median_control'] - df_['vmin'], df_['vmax'] - df_['median_control']),
+            vmin_plot=lambda df_: df_['median_control'] - df_['ranges'],
+            vmax_plot=lambda df_: df_['median_control'] + df_['ranges']
+        )
+    )
 
 ## DEFINE STUFF
 kernel_labels = {
@@ -146,14 +162,13 @@ show_example_kymos_single_variant(
     path_kymographs=kymograph_paths['lLAG08_9'],
     metadata=df_barcodes_merged,
     variant_id=opLAG1_id_query,
-    n_samples=10
+    n_samples=5
 )
     # Further processing and visualization code here
 # %%
 clustering_df = (pd
     .read_pickle(z_score_thr_dir + "/Pandas_Dataframe.pkl")
-    # Filter to only include rows with non-missing L0 values
-    .loc[lambda df_: ~df_['L0'].isna(), :]
+    .loc[lambda df_: ~df_['L0'].isna(), :] # Filter to only include rows with non-missing L0 values
     .pipe(add_eight_hour_values, kernel_labels, kernel_labels_last_t)
     .pipe(convert_seconds_to_hours, [kernel_labels_last_t['t_idiv']])
     .pipe(adjust_growth_rate_base_e_to_2, [kernel_labels_last_t['growth_rate']])
@@ -168,33 +183,22 @@ control_phenotypes_df = (pd
     .pipe(adjust_growth_rate_base_e_to_2, [kernel_labels_last_t['growth_rate']])
 )
 
-#%%
-median_values_controls = control_phenotypes_df[kernel_labels_last_t.values()].median().to_dict()
-
-labeL_percentiles = {
+label_percentiles = {
     't_idiv': 7, 'sep_disp': .5, 'length': 7,
     'width': 7, 'intensity': 7, 'growth_rate': 7
 }
 
-vmin_values = {
-    key: np.nanpercentile(clustering_df[col_name], labeL_percentiles[key])
-    for key, col_name in kernel_labels_last_t.items()
-}
+cmap_limits_df = compute_cmap_limits_df(
+    clustering_df,
+    control_phenotypes_df,
+    kernel_labels_last_t,
+    label_percentiles
+)
+# cmap_limits_df.index.name='key'
+cmap_limits_df
 
-vmax_values = {
-    key: np.nanpercentile(clustering_df[col_name], 100 - labeL_percentiles[key])
-    for key, col_name in kernel_labels_last_t.items()
-}
-
-print(vmin_values)
-print(vmax_values)
 #%%
 an_df_clustree = anndata.read_h5ad(z_score_thr_dir+"/AnnData_nonRcompat.h5ad")
 clustering_an_df = an_df_clustree.copy()
 
-
-#%%
-clustering_df[~clustering_df['L0'].isna()]
-# %%
-clustering_an_df.obs
-#%%
+#%% 
