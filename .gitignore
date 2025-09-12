@@ -1,0 +1,5 @@
+# Ignore setuptools build directories
+*.egg-info/
+
+# Ignore automatically generated version file
+*/_version.py
