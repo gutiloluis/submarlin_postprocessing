@@ -1,5 +1,8 @@
 #%%
+# %load_ext autoreload
+# %autoreload 2
 import numpy as np
+import submarlin_postprocessing.filepaths as filepaths
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -135,25 +138,32 @@ plot_metadata = (
     )
 )
 
-HEADPATH = '/home/lag36/scratch/lag36/2025-06-03_lLAG8-10_Merged-Analysis/2025-06-04_lLAG8_ExpNum-Fixed/'
-rootpath = HEADPATH + '/2025-08-12_lLAG8_12Hour_Analysis/'
-strong_effect_threshold = 1.25
-n_neighbors = 10
-z_score_thr_dir = rootpath + "/Z_Score_Thr_" + str(strong_effect_threshold) + "_N_Neighbors_" + str(n_neighbors)
+#%%
+filepaths.sgRNA_timeseries_filenames
+#%%
+exp_group = 'lDE20'#'lLAG08'
+headpath = filepaths.headpaths_merged[exp_group]
+clustering_df_filename = filepaths.clustering_df_large[exp_group]
+sgrna_timeseries_filename = filepaths.sgRNA_timeseries_filenames[exp_group]
+anndata_nonRcompat_filename = filepaths.anndata_nonRcompat[exp_group]
 
+print(f'headpath: {headpath}',
+      f'clustering_df_filename: {clustering_df_filename}',
+      f'sgrna_timeseries_filename: {sgrna_timeseries_filename}',
+      f'anndata_nonRcompat_filename: {anndata_nonRcompat_filename}',
+      sep='\n')
 
-# %%
 clustering_df = (pd
-    .read_pickle(z_score_thr_dir + "/Pandas_Dataframe.pkl")
+    .read_pickle(clustering_df_filename)
     .loc[lambda df_: ~df_['L0'].isna(), :] # Filter to only include rows with non-missing L0 values
     .pipe(add_eight_hour_values, plot_metadata)
     .pipe(convert_seconds_to_hours, plot_metadata)
     .pipe(adjust_growth_rate_base_e_to_2, plot_metadata)
 )
-
-CATEGORIES_CONTROLS = ['control']
+# CATEGORIES_CONTROLS = ['control'] # lLAG08
+CATEGORIES_CONTROLS = ['NoTarget', 'OnlyPlasmid'] # lDE20
 control_phenotypes_df = (pd
-    .read_pickle(HEADPATH + "/2025-08-11_sgRNA_Timeseries_df.pkl")
+    .read_pickle(sgrna_timeseries_filename)
     .loc[lambda df_: df_['Category'].isin(CATEGORIES_CONTROLS), plot_metadata['col_name'].values]
     .pipe(add_eight_hour_values, plot_metadata)
     .pipe(convert_seconds_to_hours, plot_metadata)
@@ -168,23 +178,17 @@ plot_metadata = compute_cmap_limits_df(
 )
 
 #%%
-an_df_clustree = anndata.read_h5ad(z_score_thr_dir+"/AnnData_nonRcompat.h5ad")
+an_df_clustree = anndata.read_h5ad(anndata_nonRcompat_filename)
 clustering_an_df = an_df_clustree.copy()
 
-
-
 # %%
-
 plt.style.use('umap_grid.mplstyle')
 # plt.style.use('default')
-_ = plot_umap_variables(clustering_an_df, clustering_df, plot_metadata, query="Gene.str.contains('fts')")
-# %%
-clustering_an_df.obs.query("Gene == 'dnaA'")
-clustering_an_df.obs.query("Gene == 'dnaA'")
+_ = plot_umap_variables(
+    clustering_an_df,
+    clustering_df,
+    plot_metadata,
+    query="Gene.str.contains('fts')"
+)
 
 #%%
-query = "Gene.str.contains('dna')"
-mask = clustering_an_df.obs.query(query).index
-# %%
-
-clustering_an_df[mask, :]
