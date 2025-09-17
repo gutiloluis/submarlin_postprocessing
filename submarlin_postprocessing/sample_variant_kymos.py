@@ -1,6 +1,7 @@
 #%%
 from pathlib import Path
 import re
+import submarlin_postprocessing.filepaths as filepaths
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -54,12 +55,11 @@ def show_example_kymos_single_variant(
             headpath=path_kymographs,
             prefix=PREFIX_FILE,
             key=KEY_IMAGE
-        )[file_trench_idx][::2,:,:]
+        )[file_trench_idx][::1,:,:]
         axs[i].imshow(unfold_kymograph(images), cmap='gray')
         axs[i].axis('off')
     plt.tight_layout()
     plt.show()
-
 
 # Experiment paths
 HEADPATH = '/home/lag36/scratch/lag36/2025-06-03_lLAG8-10_Merged-Analysis/2025-06-04_lLAG8_ExpNum-Fixed/'
@@ -92,7 +92,7 @@ df_barcodes_merged = (pd
 )
 
 
-opLAG1_id_query = 1391
+opLAG1_id_query = 4441
 show_example_kymos_single_variant(
     path_kymographs=kymograph_paths['lLAG08_9'],
     metadata=df_barcodes_merged,
@@ -101,3 +101,4 @@ show_example_kymos_single_variant(
 )
 
 # %%
+df_barcodes_merged
