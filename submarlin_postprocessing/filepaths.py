@@ -191,6 +191,32 @@ anndata_nonRcompat = {
     'lDE20_pre': headpaths_merged['lDE20_pre'] / prefixes_clustering_df['lDE20_pre'] / 'AnnData_nonRcompat.h5ad',
     'lDE20': headpaths_merged['lDE20'] / prefixes_clustering_df['lDE20'] / 'AnnData_nonRcompat.h5ad',
 }
-#%%
-anndata_nonRcompat
 
+## Notebook 8
+steady_state_cell_cycle_df_estimators_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Cell_Cycle_df_Estimators.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Cell_Cycle_df_Estimators.pkl',
+}
+steady_state_cell_cycle_df_trench_estimators_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Cell_Cycle_df_Trench_Estimators.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Cell_Cycle_df_Trench_Estimators.pkl',
+}
+
+steady_state_growth_df_estimators_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Growth_df_Estimators.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Growth_df_Estimators.pkl',
+}
+steady_state_growth_df_trench_estimators_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Growth_df_Trench_Estimators.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Growth_df_Trench_Estimators.pkl',
+} 
+
+steady_state_timepoints_df_estimators_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Timepoints_df_Estimators.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Timepoints_df_Estimators.pkl',
+}
+
+df_bar_per_trench_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_df_bar_per_trench.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_df_bar_per_trench.pkl',
+}
