@@ -3,3 +3,6 @@
 
 # Ignore automatically generated version file
 */_version.py
+
+# __pycache__ directories
+__pycache__/
