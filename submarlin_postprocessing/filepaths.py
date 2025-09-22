@@ -88,6 +88,11 @@ final_barcodes_df_merged_filenames = {
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Final_Barcodes_df_Merged',
 }
 
+final_barcodes_df_condensed_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-08-19_lLAG8_Final_Barcode_df_Condensed_First-Timepoint.pkl',
+    'lLAG10': 
+}
+
 lineage_cell_cycle_df_merged_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Lineage_Cell_Cycle_Merged',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Lineage_Cell_Cycle_Merged',
@@ -220,3 +225,6 @@ df_bar_per_trench_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_df_bar_per_trench.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_df_bar_per_trench.pkl',
 }
+
+
+

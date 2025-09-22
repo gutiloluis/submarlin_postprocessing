@@ -62,17 +62,19 @@ def show_example_kymos_single_variant(
     plt.show()
 
 # Experiment paths
-HEADPATH = '/home/lag36/scratch/lag36/2025-06-03_lLAG8-10_Merged-Analysis/2025-06-04_lLAG8_ExpNum-Fixed/'
-headpath = '/home/lag36/scratch/lag36/'
-suffix = '/Growth_Division/kymograph/'
-kymograph_paths = {
-    'lLAG08_1': headpath + '/2024-08-16_lLAG8_Run-1_Pipeline-Run-2-2025-05-14/' + suffix,
-    'lLAG10_2': headpath + '/2024-12-05_lLAG10_MBM_Run-2_3-Fiducials_Temp-Fixed_Pipeline-Run-2-2025-05-14/' + suffix,
-    'lLAG08_5': headpath + '/2025-02-20_lLAG8-MBM-37C-Run-05_3-Fids_Auto-Switch/' + suffix,
-    'lLAG08_9': headpath + '/2025-03-26_lLAG8-MBM-37C-Run-09_3-Fids_Auto-Switch/' + suffix,
-}
+exp_group = 'lLAG08'
+HEADPATH = filepaths.headpaths_merged[exp_group]
+exp_labels = filepaths.experiments_merged[exp_group]
+exp_headpaths = {key: filepaths.headpaths[key] for key in exp_labels}
+exp_kymograph_paths = {key: exp_headpaths[key] / filepaths.suffix_kymographs for key in exp_labels}
+#%%
 
-base_path = Path(kymograph_paths['lLAG08_9'])
+def load_kymo_localization_metadata(
+    img_headpath: Path,
+    metadata_filename: str,
+)
+
+base_path = Path(exp_kymograph_paths['lLAG08_9'])
 
 file_numbers = sorted(
     int(m.group(1))
@@ -85,20 +87,20 @@ print(missing_numbers)
 
 df_barcodes_merged = (pd
     .read_pickle(
-        HEADPATH + '/2025-08-19_lLAG8_Final_Barcode_df_Condensed_First-Timepoint.pkl'
+        HEADPATH / '2025-08-19_lLAG8_Final_Barcode_df_Condensed_First-Timepoint.pkl'
     )
     .xs(3, level='Experiment #')
     .loc[lambda df_:~df_['File Index'].isin(missing_numbers), :]
 )
 
-
 opLAG1_id_query = 4441
 show_example_kymos_single_variant(
-    path_kymographs=kymograph_paths['lLAG08_9'],
+    path_kymographs=exp_kymograph_paths['lLAG08_9'],
     metadata=df_barcodes_merged,
     variant_id=opLAG1_id_query,
     n_samples=5
 )
-
-# %%
-df_barcodes_merged
+#%%
+pd.read_pickle(
+    filepaths.df_bar_per_trench_filenames['lLAG08']
+)
