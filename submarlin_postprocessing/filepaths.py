@@ -9,12 +9,22 @@ headpath = Path("/home/lag36/scratch/lag36/")
 
 ## Notebook 1
 suffix_kymographs = Path('Growth_Division/kymograph')
+suffix_segmentation = Path('Growth_Division/fluorsegmentation')
 
 headpaths = {
     'lLAG08_1': headpath / '2024-08-16_lLAG8_Run-1_Pipeline-Run-2-2025-05-14',
     'lLAG10_2': headpath / '2024-12-05_lLAG10_MBM_Run-2_3-Fiducials_Temp-Fixed_Pipeline-Run-2-2025-05-14',
     'lLAG08_5': headpath / '2025-02-20_lLAG8-MBM-37C-Run-05_3-Fids_Auto-Switch', # Ommited bc of a misterious bug
     'lLAG08_9': headpath / '2025-03-26_lLAG8-MBM-37C-Run-09_3-Fids_Auto-Switch',
+}
+
+kymograph_paths = {
+    key: headpaths[key] / suffix_kymographs
+    for key in headpaths.keys()}
+
+segmentation_paths = {
+    key: headpaths[key] / suffix_segmentation
+    for key in headpaths.keys()
 }
 
 nanopore_filenames = { # TODO Unify into single path # In .../Barcodes
@@ -82,6 +92,20 @@ experiments_merged = {
     'lDE20': None,
 }
 
+experiment_numbers_after_merge = {
+    'lLAG08_1': 0,
+    'lLAG10_2': 1,
+    'lLAG08_5': 2,
+    'lLAG08_9': 3,
+}
+
+experiment_numbers_after_merge_to_key = {
+    0: 'lLAG08_1',
+    1: 'lLAG10_2',
+    2: 'lLAG08_5',
+    3: 'lLAG08_9',
+}
+
 ## Notebook 5
 final_barcodes_df_merged_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Final_Barcodes_df_Merged',
@@ -89,8 +113,8 @@ final_barcodes_df_merged_filenames = {
 }
 
 final_barcodes_df_condensed_filenames = {
-    'lLAG08': headpaths_merged['lLAG08'] / '2025-08-19_lLAG8_Final_Barcode_df_Condensed_First-Timepoint.pkl',
-    'lLAG10': 
+    'lLAG08': headpaths_merged['lLAG08'] / 'lLAG8_Final_Barcode_df_First-Timepoint.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / 'lLAG10_Final_Barcode_df_First-Timepoint.pkl',
 }
 
 lineage_cell_cycle_df_merged_filenames = {
