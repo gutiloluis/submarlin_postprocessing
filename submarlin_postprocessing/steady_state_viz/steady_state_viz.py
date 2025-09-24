@@ -1,10 +1,11 @@
 #%%
+import dask.dataframe as dd
 import pandas as pd
 import submarlin_postprocessing.filepaths as filepaths
-import submarlin_postprocessing.sample_variant_kymos as sample_variant_kymos
+# import submarlin_postprocessing.sample_variant_kymos as sample_variant_kymos
 import matplotlib.pyplot as plt
 import seaborn as sns
-#%%
+
 def _flatten_function(col: tuple) -> str:
     """
     Flatten a multi-level column index.
@@ -81,6 +82,54 @@ def load_and_pivot_all_steady_state_dfs(
         .merge(df_growth_pivoted.drop(columns=cols_grnas), on=index_name)
         .merge(df_timepoints_pivoted, on=index_name, how='inner')
     )
+
+def get_condensed_barcode_df_per_trench(
+    filename_input: str,
+    filename_output: str,
+) -> pd.DataFrame:
+    """
+    Load the merged barcode DataFrame (Usually parquet "Final_Barcode_df_Merged"), 
+    condense it to one row per trench, and save it to a new file as pd.DataFrame pickle.
+    This will normally require a dask cluster to run efficiently.
+    """
+    df_barcodes_per_trench = (
+        dd.read_parquet(filename_input, engine="pyarrow")
+        .reset_index()
+        .drop_duplicates(subset=["Multi-Experiment Phenotype Trenchid"])
+        .set_index("Multi-Experiment Phenotype Trenchid")
+        .compute()
+    )
+
+    df_barcodes_per_trench.to_pickle(filename_output)
+
+    return df_barcodes_per_trench
+
+#%% EXAMPLE USAGE
+# from submarlin_postprocessing.parallel import DaskController
+
+# dask_controller = DaskController(
+#     local=False,
+#     n_workers=20,
+#     n_workers_adapt_max=50,
+#     queue='short',
+#     memory='32GB',
+#     walltime='00:30:00',
+#     local_directory='/home/lag36/scratch/lag36/dask',
+# )
+
+# dask_controller.start_dask()
+
+# exp_group = 'lLAG10'
+# barcodes_merged_df_filename = filepaths.final_barcodes_df_merged_filenames[exp_group] 
+# file_output = filepaths.final_barcodes_df_condensed_filenames[exp_group]
+
+# df_barcodes_per_trench = get_condensed_barcode_df_per_trench(
+#     filename_input=barcodes_merged_df_filename,
+#     filename_output=file_output
+# )
+
+# dask_controller.shutdown()
+
 
 #%%
 exp_groups = ['lLAG08', 'lLAG10']
