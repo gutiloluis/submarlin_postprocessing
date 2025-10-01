@@ -1,0 +1,40 @@
+# Figure size and DPI for a high-resolution slide
+#figure.figsize : 16, 8
+#figure.dpi : 100
+#savefig.dpi : 300
+
+# Font settings for better readability from a distance
+font.size : 6
+axes.titlesize : 7
+axes.labelsize : 7
+xtick.labelsize : 6
+ytick.labelsize : 6
+legend.fontsize : 5
+font.family : sans-serif
+font.sans-serif : Arial, Helvetica, DejaVu Sans, Bitstream Vera Sans, sans-serif
+
+# Axes and grid for a clean, professional look
+axes.grid : False
+axes.axisbelow : True
+axes.spines.top : False
+axes.spines.right : False
+axes.spines.left : True
+axes.spines.bottom : True
+
+# Ticks and labels (set to empty for your use case)
+#xtick.bottom : False
+#ytick.left : False
+#xtick.labelbottom : False
+#ytick.labelleft : False
+
+# Line and marker properties
+axes.linewidth: 1
+lines.linewidth : 3.0
+lines.markersize : 3
+patch.linewidth : 1
+
+# Set the line width for the major ticks on the x-axis
+xtick.major.width: 1
+
+# Set the line width for the major ticks on the y-axis
+ytick.major.width: 1
