@@ -1,11 +1,12 @@
 #%%
 import dask.dataframe as dd
 import pandas as pd
-import submarlin_postprocessing.filepaths as filepaths
-# import submarlin_postprocessing.sample_variant_kymos as sample_variant_kymos
 import matplotlib.pyplot as plt
-import seaborn as sns
+from adjustText import adjust_text
 
+##############################
+## Functions for processing steady state DataFrames
+##############################
 def _flatten_function(col: tuple) -> str:
     """
     Flatten a multi-level column index.
@@ -104,9 +105,8 @@ def get_condensed_barcode_df_per_trench(
 
     return df_barcodes_per_trench
 
-#%% EXAMPLE USAGE
+## EXAMPLE USAGE FOR ABOVE FUNCTION
 # from submarlin_postprocessing.parallel import DaskController
-
 # dask_controller = DaskController(
 #     local=False,
 #     n_workers=20,
@@ -116,9 +116,7 @@ def get_condensed_barcode_df_per_trench(
 #     walltime='00:30:00',
 #     local_directory='/home/lag36/scratch/lag36/dask',
 # )
-
 # dask_controller.start_dask()
-
 # exp_group = 'lLAG10'
 # barcodes_merged_df_filename = filepaths.final_barcodes_df_merged_filenames[exp_group] 
 # file_output = filepaths.final_barcodes_df_condensed_filenames[exp_group]
@@ -127,53 +125,12 @@ def get_condensed_barcode_df_per_trench(
 #     filename_input=barcodes_merged_df_filename,
 #     filename_output=file_output
 # )
-
 # dask_controller.shutdown()
 
 
-#%%
-exp_groups = ['lLAG08', 'lLAG10']
-dfs = {key: load_and_pivot_all_steady_state_dfs(
-    filepaths.steady_state_cell_cycle_df_estimators_filenames[key],
-    filepaths.steady_state_growth_df_estimators_filenames[key],
-    filepaths.steady_state_timepoints_df_estimators_filenames[key],
-    index_name='opLAG1_id',
-    # cols_grnas=['locus_tag', 'Gene', 'Predicted_Efficacy,
-    #             'Category', 'TargetID', 'N Observations'],
-    cols_grnas=['locus_tag', 'Gene',
-                'Category', 'N Observations'],
-    remove_key='(True)' # Keep only robust estimators
-) for key in exp_groups}
-
-
-#%%
-df = dfs['lLAG08']
-
-column_names = {'t_idiv': 'Mean (Robust)_Delta time (s)',
-                'sep_disp': 'Mean (Robust)_Septum Displacement Length Normalized',
-                'length': 'Mean (Robust)_Length',
-                'width': 'Mean (Robust)_Width',
-                'intensity': 'Mean (Robust)_mCherry mean_intensity',
-                'growth_rate': 'Mean (Robust)_Instantaneous Growth Rate: Volume'
-}
-# short_label = {'t_idiv': r'$ \tau $', 'sep_disp': r'$ L_{S} $', 
-#                         'length': r'$ L $', 'width': r'$ W $', 
-#                         'intensity': r'$ I_{rpsL} $', 'growth_rate': r'$ \lambda $'},
-
-short_label = {'Mean (Robust)_Delta time (s)': r'$ \tau $',
-                'Mean (Robust)_Septum Displacement Length Normalized': r'$ L_{S} $',
-                'Mean (Robust)_Length': r'$ L $',
-                'Mean (Robust)_Width': r'$ W $',
-                'Mean (Robust)_mCherry mean_intensity': r'$ I_{rpsL} $',
-                'Mean (Robust)_Instantaneous Growth Rate: Volume': r'$ \lambda $'}
-
-long_label = {'Mean (Robust)_Delta time (s)': 'Interdivision Time (s)',
-                'Mean (Robust)_Septum Displacement Length Normalized': 'Septum Displacement Length Normalized',
-                'Mean (Robust)_Length': 'Length ($\mu$m)',
-                'Mean (Robust)_Width': 'Width ($\mu$m)',
-                'Mean (Robust)_mCherry mean_intensity': 'mCherry Mean Intensity (AU)',
-                'Mean (Robust)_Instantaneous Growth Rate: Volume': 'Growth Rate (1/hr)'}
-
+############################################################
+## Functions for plotting
+############################################################
 def show_n_observations_histogram(
         df: pd.DataFrame, 
         ax: plt.Axes,
@@ -198,6 +155,7 @@ def show_n_observations_histogram(
 def show_variable_histogram(
         df: pd.DataFrame, 
         variable: str,
+        label_dict: dict,
         ax: plt.Axes,
         title: str,
         color: str = None,
@@ -208,41 +166,43 @@ def show_variable_histogram(
     variable: Variable to plot.
     """
     _ = ax.hist(df[variable], bins=30, histtype='step', color=color, log=True)
-    ax.set_xlabel(long_label[variable])
+    ax.set_xlabel(label_dict[variable])
     ax.set_ylabel('# Gene Targets')
     ax.set_title(title)
 
     df_controls = df.loc[df['Category'] == 'control', variable]
     _ = ax.hist(df_controls, bins=30, histtype='step', color='black', label='Controls', log=True)
-#%% Histograms
-plt.style.use('steady_state.mplstyle')
 
-fig, axs= plt.subplots(1, 2, figsize=(6, 3))
-show_n_observations_histogram(df=dfs['lLAG08'], title='Essentials', ax=axs[0], color='C0')
-show_n_observations_histogram(df=dfs['lLAG10'], title='Non-Essentials', ax=axs[1], color='C1')
-fig.tight_layout()
+def show_all_histograms(
+    dfs: dict[str, pd.DataFrame],
+    label_dict: dict,
+):
+    fig, axs= plt.subplots(1, 2, figsize=(6, 3))
+    show_n_observations_histogram(df=dfs['lLAG08'], title='Essentials', ax=axs[0], color='C0')
+    show_n_observations_histogram(df=dfs['lLAG10'], title='Non-Essentials', ax=axs[1], color='C1')
+    fig.tight_layout()
 
-fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
-show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Length', title='Essentials', ax=axs[0], color='C0')
-show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Length', title='Non-Essentials', ax=axs[1], color='C1')
-fig.tight_layout()
+    fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
+    show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Length', label_dict=label_dict, title='Essentials', ax=axs[0], color='C0')
+    show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Length', label_dict=label_dict, title='Non-Essentials', ax=axs[1], color='C1')
+    fig.tight_layout()
 
-fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
-show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Width', title='Essentials', ax=axs[0], color='C0')
-show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Width', title='Non-Essentials', ax=axs[1], color='C1')
-fig.tight_layout()
+    fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
+    show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Width', label_dict=label_dict, title='Essentials', ax=axs[0], color='C0')
+    show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Width', label_dict=label_dict, title='Non-Essentials', ax=axs[1], color='C1')
+    fig.tight_layout()
 
-fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
-show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Instantaneous Growth Rate: Volume', title='Essentials', ax=axs[0], color='C0')
-show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Instantaneous Growth Rate: Volume', title='Non-Essentials', ax=axs[1], color='C1')
-fig.tight_layout()
+    fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
+    show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Instantaneous Growth Rate: Volume', label_dict=label_dict, title='Essentials', ax=axs[0], color='C0')
+    show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Instantaneous Growth Rate: Volume', label_dict=label_dict, title='Non-Essentials', ax=axs[1], color='C1')
+    fig.tight_layout()
 
-#%% Mismatch panel
 def plot_mismatch_panel_single_gene(
     df: pd.DataFrame,
     gene: str,
     x_var: str,
     y_var: str,
+    label_dict: dict,
     ax: plt.Axes,
     color: str = None
 ) -> None:
@@ -264,11 +224,12 @@ def plot_mismatch_panel_single_gene(
         color='black',
     )
 
-    ax.set_ylabel(long_label[y_var])
+    ax.set_ylabel(label_dict[y_var])
     ax.set_title(gene)
 
 def plot_mismatch_panels_multiple_genes(
     dfs: dict[str, pd.DataFrame],
+    label_dict: dict,
     color: str = None
 ):
     fig, axs = plt.subplots(2, 2, figsize=(4.5, 4.5), sharex=True)
@@ -279,67 +240,79 @@ def plot_mismatch_panels_multiple_genes(
         df=dfs['lLAG08'], gene='rplQ',
         x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
         y_var='Mean (Robust)_Length',
+        label_dict=label_dict,
         ax=axs[0,0], color=color
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='ftsW',
         x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
         y_var='Mean (Robust)_Length',
+        label_dict=label_dict,
         ax=axs[0,1], color=color
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='pyk',
         x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
         y_var='Mean (Robust)_Length',
+        label_dict=label_dict,
         ax=axs[1,0], color=color
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='murB',
         x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
         y_var='Mean (Robust)_Width',
+        label_dict=label_dict,
         ax=axs[1,1], color=color
     )
 
-    fig.supxlabel(long_label['Mean (Robust)_Instantaneous Growth Rate: Volume'], y = 0.05, fontsize=plt.rcParams['axes.labelsize'])
+    fig.supxlabel(label_dict['Mean (Robust)_Instantaneous Growth Rate: Volume'], y = 0.05, fontsize=plt.rcParams['axes.labelsize'])
     fig.tight_layout()
 
-plot_mismatch_panels_multiple_genes(dfs, color=None)
+def bivariate_plot(
+    df,
+    x_var,
+    y_var,
+    ax,
+    label_dict,
+    color='black',
+    **kwargs
+):
+    ax.scatter(x=df[x_var], y=df[y_var], color=color, **kwargs)
+    ax.set_xlabel(label_dict[x_var])
+    ax.set_ylabel(label_dict[y_var])
 
-#%% Example kymographs
-exp_group = 'lLAG08'
-HEADPATH = filepaths.headpaths_merged[exp_group]
-exp_labels = filepaths.experiments_merged[exp_group]
-exp_headpaths = {key: filepaths.headpaths[key] for key in exp_labels}
-exp_kymograph_paths = {key: exp_headpaths[key] / filepaths.suffix_kymographs for key in exp_labels}
+def bivariate_plot_with_subsets(
+    df,
+    df_subset,
+    df_annotate,
+    df_controls,
+    x_var,
+    y_var,
+    ax,
+    label_dict,
+    color_all='black',
+    color_subset='blue',
+    color_controls='red',
+    **kwargs
+):
+    bivariate_plot(df=df, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_all, s=2, alpha=0.5,**kwargs)
+    bivariate_plot(df=df_subset, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_subset, s=5, alpha=1, **kwargs)
+    texts = []
+    for _, row in df_annotate.iterrows():
+        texts.append(
+            ax.text(x=row[x_var], y=row[y_var], s=row['Gene'],
+                ha='center', va='bottom', fontsize=8, color='black')
+        )
+    _= adjust_text(
+        texts,
+        arrowprops=dict(arrowstyle='->', color='black', lw=1.5),
+        ax=ax,
+        # force_points=0.01,
+        # force_text=0.01,
+        # force_pull=0.001,
+        min_arrow_len=1,
+    )
+    bivariate_plot(df=df_controls, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_controls, alpha=0.5, s=2, **kwargs)
 
+plt.style.use('steady_state.mplstyle')
 
-
-#%%
-
-
-#%% 
-## This is for streamlit visualization
-nice_names_map = {
-    'Mean (Robust)_Delta time (s)': 'Interdivision Time (s)',
-    'Mean (Robust)_Septum Displacement Length Normalized': 'Septum Displacement',
-    'Mean (Robust)_Instantaneous Growth Rate: Volume': 'Growth Rate (1/hr)',
-    'Mean (Robust)_Length': 'Length (um)',
-    'Mean (Robust)_Width': 'Width (um)',
-    'Mean (Robust)_mCherry mean_intensity': 'mCherry Intensity (AU)',
-}
-
-df2 = (
-    df
-    .rename(columns=nice_names_map)
-    .loc[:, lambda df_: ['Gene'] + [col for col in df_.columns.tolist() if col != 'Gene']]
-    .assign(color_cat = lambda df_: df_['Category'].apply(lambda category: 0 if category == 'control' else 1))
-    # .astype({'color_cat': 'category'})
-)
-df2.dtypes
-#%%
-df2.to_pickle(exp_group_headpath / 'Steady_State_Combined_df_Estimators.pkl')
-
-#%%
-exp_group_headpath / 'Steady_State_Combined_df_Estimators.pkl'
-#%%
-pd.read_pickle(filepaths.df_bar_per_trench_filenames[exp_group])
