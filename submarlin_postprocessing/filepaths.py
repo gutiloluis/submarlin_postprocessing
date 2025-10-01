@@ -252,3 +252,142 @@ df_bar_per_trench_filenames = {
 
 
 
+##############################################
+# Column names, axes labels, etc
+##############################################
+
+column_names = {'t_idiv': 'Mean (Robust)_Delta time (s)',
+                'sep_disp': 'Mean (Robust)_Septum Displacement Length Normalized',
+                'length': 'Mean (Robust)_Length',
+                'width': 'Mean (Robust)_Width',
+                'intensity': 'Mean (Robust)_mCherry mean_intensity',
+                'growth_rate': 'Mean (Robust)_Instantaneous Growth Rate: Volume'}
+short_labels = {'Mean (Robust)_Delta time (s)': r'$ \tau $',
+                'Mean (Robust)_Septum Displacement Length Normalized': r'$ L_{S} $',
+                'Mean (Robust)_Length': r'$ L $',
+                'Mean (Robust)_Width': r'$ W $',
+                'Mean (Robust)_mCherry mean_intensity': r'$ I_{rpsL} $',
+                'Mean (Robust)_Instantaneous Growth Rate: Volume': r'$ \lambda $'}
+long_labels = {'Mean (Robust)_Delta time (s)': 'Interdivision Time (s)',
+                'Mean (Robust)_Septum Displacement Length Normalized': 'Septum Displacement Length Normalized',
+                'Mean (Robust)_Length': 'Length ($\mu$m)',
+                'Mean (Robust)_Width': 'Width ($\mu$m)',
+                'Mean (Robust)_mCherry mean_intensity': 'mCherry Mean Intensity (AU)',
+                'Mean (Robust)_Instantaneous Growth Rate: Volume': 'Growth Rate (1/hr)'}
+
+##############################################
+# Gene subsets Subtiwiki
+##############################################
+
+genes_divisome = ["divIB", "divIC", "ezrA", "ftsA", "ftsL", "ftsW", "ftsZ", "pbpB", "sepF", "zapA"]
+genes_replication = ['arrA', 'ccrZ', 'dnaA', 'dnaB', 'dnaC', 'dnaD', 'dnaE', 'dnaG', 'dnaI', 'dnaN', 'dnaX', 'fenA', 'hbs', 'holA', 'holB', 'ligA', 'ligB', 'polA', 'polC', 'priA', 'recD2', 'recJ', 'recQ', 'rnhB', 'rnhC', 'rtp', 'sirA', 'ssbA', 'ssbB', 'topB', 'xtmA', 'xtmB', 'yabA']
+genes_elongasome = ["mreB", "mbl", "mreBH", "mreC", "mreD", "rodZ", "rodA", "pbpA", "pbpH", "ponA", "tseB", "lytE", "sigI"]
+genes_cell_wall_precursors = ["alr", "amj", "asd", "dapA", "dapB", "dapF", "dapG", "dat", "ddl", "gcaD", "glmM", "glmR", "glmS", "ldcB", "ldt", "mraY", "murAA", "murAB", "murB", "murC", "murD", "murE", "murF", "murG", "murJ", "patA", "pgcA", "racE", "spoVB", "spoVE", "uptA", "walJ", "yabM", "yciB", "ykuQ", "ykuR", "ylmD", "yrpC"]
+genes_teichoic_acid = ["dltA", "dltB", "dltC", "dltD", "dltE", "dltX", "ggaA", "ggaB", "gtaB", "gtcA", "mnaA", "pgcA", "tagA", "tagB", "tagC", "tagD", "tagE", "tagF", "tagG", "tagH", "tagO", "yngA"]
+genes_segregation = ["codV", "gyrA", "gyrB", "hbs", "parA", "parB", "parC", "parE", "rok", "scpA", "scpB", "sftA", "smc", "spoIIIE", "topA", "topB", "whiA", "xerD"]
+genes_fla_che = ["flgB", "flgC", "fliE", "fliF", "fliG", "fliH", "fliI", "fliJ", "ylxF", "fliK", "flgD", "flgE", "swrD", "fliL", "fliM", "fliY", "cheY", "fliO", "fliP", "fliQ", "fliR", "flhB", "flhA", "flhF", "flhG", "cheB", "cheA", "cheW", "cheC", "cheD", "sigD", "swrB"]
+
+
+genes_min_system = ["divIVA", "minC", "minD", "minJ"]
+genes_nucleoid_occlusion = ["noc", "gidA", "gidB", "thdF"] # noc + upstream in operon
+
+##############################################
+# Genes to follow up manually
+##############################################
+genes_surprising_hits = {
+    'div_like': {
+        'lLAG08': [
+            'pyrG', 'pyrH', # CTP (also came up in sep disp)
+            'ackA', # ABC transporter, cell division (with ftsX). Very strong hit. Acetate kinase
+            'smpB', # tmRNA, ribosome rescue (why div-like?)
+            'mrpA', 'mrpB', 'mrpC', # MrpABCDEFG, cation antiporter, pH homeostasis
+            'tmk',
+            'fmt',
+            'sknR', # Prophage repressor, unknown why div-like
+            'yneF', # Membrane protein, unknown function
+            'cmk', # Cytidylate kinase, nucleotide metabolism
+        ],
+        'lLAG10': [
+            'ctsR','clpC', # Chaperonin, protein folding Very strong (why div-like?)
+            'thyA', 'thiC', # Thymidylate synthase, nucleotide metabolism
+            'yncF', # Unknown function. Near thimine
+            'yaaR', # Unknown ###########
+            'defA', # Peptide deformylase, protein maturation. Operon with fmt
+            'ylxX', 'sbp', # Operon with divIB (div-like?). Right upstream of ftsAZ
+            'yfjC', 'yfjB', # TA system
+            'yabR', # Downstream of divIC,unknown #######
+        ]
+    },
+    'slow_growth': {
+        'lLAG08': [
+        ],
+        'lLAG10': [
+            'ykuS', # Slow, long ######### (3 grnas)  
+        ],
+    },
+    'fast_growth': {
+        'lLAG08': [
+            'murAA', # cell wall precursor
+            'glmS', # Glucosamine-6-phosphate synthase, cell wall precursor
+            'pgsA', # Phosphatidylglycerophosphate synthase, lipid metabolism
+        ],
+        'lLAG10': [
+            'walI', 'walJ',
+            'tepA', # Sporulation, protease
+            'yjnA', # Unknown function
+            'cpaA', # Cation transporter, unknown why fast growth
+        ],
+    },
+    'wide': {
+        'lLAG08': [
+            'yumC', # Unknown
+            'tmK', # Thymidylate kinase, nucleotide metabolism
+        ],
+        'lLAG10': [
+            'ugtP', # Undecaprenyl pyrophosphate glucosyltransferase, cell wall precursor
+            'yuzB', # Membrane protein, unknown function
+            'yvzJ', # All 3 gRNAs! ###########
+            'spoIIT', # Sporulation, protease
+        ],
+    },
+    'sep_disp': {
+        'lLAG08': [
+            'gpsA', # Glycerol-3-phosphate dehydrogenase, lipid metabolism
+            'tmk', # Thymidylate kinase, nucleotide metabolism
+            'eno', # Enolase, glycolysis (also RNA degradosome)
+            'plsX', # Fatty acids (operon with fapR)
+            'nrdF', 'nrdI', # Ribonucleotide reductase, nucleotide metabolism
+        ],
+        'lLAG10': [
+            'yeeC', # Unknown function
+            'yeeD', # Unknown function. # Nearby yeeC but in opposite orientation
+            'flgM', # Anti-sigma factor for sigD, motility (why sep_disp?)
+            'azlB', # Branched-chain amino acid transporter, unknown why sep_disp
+            'fapR', # Fatty acid biosynthesis repressor, unknown why sep_disp
+            'yoaZ', # Unknown (predicted peptidase)
+        ]
+    }
+}
+
+genes_known_prototypical = {
+    'div_like': {
+        'lLAG08': [
+            'nrdE', 'nrdI', 'nrdF',# Also nrdF, nrdI in sep_disp
+        ]
+    },
+    'sep_disp': {
+        'lLAG08': [
+            'walK', 'walR' # See walJHI in nonessentials
+            'ffh', 'secE', 'secY', # Secretion (but close to ribosomal)
+            'murB', 'divIB', # Operon with divIB, ylxX, sbp (divIB check again)
+            'pcrA', # segretation
+            'yaaK', # Same operon as recue
+        ],
+        'lLAG10': [
+            'recR' # Really? Strong hit
+            'walJ', 'walH', # Known to coordinate replication with division
+            'walI' # Weaker than walJ/H but also part of the walRKHIJ operon
+            'ripX', # Ter resolution    
+        ]
+    }
+}
