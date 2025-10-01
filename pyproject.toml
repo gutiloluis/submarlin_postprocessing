@@ -22,7 +22,8 @@ dependencies = [
     "dask[complete]",
     "dask_jobqueue",
     "anndata",
-    "scanpy"
+    "scanpy",
+    "adjustText",
 ]
 dynamic = ["version"]
 
