@@ -240,6 +240,59 @@ _=steady_state_viz.bivariate_plot_with_subsets(
 # 
 # To find length genes (yqiD: 3706, 3707)
 
+# Boxplot 1: Fast growth rate:
+y_col = column_names['sep_disp']
+genes_fast_growth=filepaths.genes_surprising_hits['sep_disp']
+genes_fast_growth
+
+exp_group = 'lLAG08'
+
+df = dfs[exp_group]
+df_subset = (
+    df
+    .loc[lambda df_:
+        (df_['Gene'].isin(genes_fast_growth[exp_group]))
+        | (df_['Category'] == 'control')
+    ]
+    .assign(Gene=lambda df_:np.where(
+        df_['Category'] == 'control',
+        'control',
+        df_['Gene'])
+    )
+)
+df_subset
+
+ax = sns.stripplot(data=df_subset,
+    x='Gene',
+    y=y_col,
+    # zorder=1,
+)
+
+# sns.violinplot(
+#     data = df_subset.loc[lambda df_:df_['Gene']=='control'],
+#     x='Gene',
+#     y=column_names['growth_rate'],           
+# )
+
+sns.boxplot(
+    data=df_subset,
+    x='Gene',
+    y=y_col,
+    boxprops={'facecolor': 'None', 'zorder': 10},
+    showfliers=False,
+    # zorder=10,
+    ax=ax
+)
+
+#%%
+(
+    df
+    .loc[lambda df_:df_['Gene'].isin(genes_fast_growth['lLAG10'])]
+    .groupby('Gene')
+    ['N Observations']
+    .sum()
+)
+#%%
 df = dfs['lLAG10']
 # df_div_like = get_significant_hits.filter_high_gr(
 #     df,

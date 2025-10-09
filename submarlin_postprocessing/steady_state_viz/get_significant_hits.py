@@ -1,5 +1,6 @@
 #%%
 import submarlin_postprocessing.filepaths as filepaths
+import submarlin_postprocessing.sample_variant_kymos as sample_variant_kymos
 import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
 import pandas as pd
 import numpy as np
@@ -33,36 +34,48 @@ def _aggregate_max(df, func_name='max', n_observations_cutoff=1):
         .groupby('Gene')
         .agg({column_name: func_name for column_name in column_names.values()})
     )
+
 def filter_div_like_ess(
     df,
     n_observartions_cutoff=1, # Minimum number of observations for a grna to be considered
     n_grnas_cutoff=2, # Number of grnas of the same gene that need to pass the filters
+    query = None,
 ):
-    return (
+    
+    df_partial = (
         df
         .loc[
             (df[column_names['length']] > 3.1)
             & (df[column_names['length']] < np.inf)
             & (df[column_names['growth_rate']] > 0.7)
             & (df['N Observations'] > n_observartions_cutoff)
-            & (~df['Gene'].str.startswith('rpl'))
-            & (~df['Gene'].str.startswith('rps'))
-            & (~df['Gene'].isin(genes_divisome))
-            & (~df['Gene'].isin(genes_replication))
         ]
-        .groupby('Gene')
-        .size()
-        .loc[lambda s_: s_ > n_grnas_cutoff]
-        .rename('n_grnas')
-        .to_frame()
-        .merge(
-            _aggregate_max(df, n_observations_cutoff=n_observartions_cutoff),
-            left_index=True,
-            right_index=True,
-            how='inner'
-        )
-        .sort_values(by=column_names['length'], ascending=False)
     )
+
+    if query is not None:
+        return sample_variant_kymos.filter_metadata(metadata=df_partial,query=query)
+    else:
+        return (
+            df_partial
+            .loc[
+                (~df['Gene'].str.startswith('rpl'))
+                & (~df['Gene'].str.startswith('rps'))
+                & (~df['Gene'].isin(genes_divisome))
+                & (~df['Gene'].isin(genes_replication))
+            ]
+            .groupby('Gene')
+            .size()
+            .loc[lambda s_: s_ > n_grnas_cutoff]
+            .rename('n_grnas')
+            .to_frame()
+            .merge(
+                _aggregate_max(df, n_observations_cutoff=n_observartions_cutoff),
+                left_index=True,
+                right_index=True,
+                how='inner'
+            )
+            .sort_values(by=column_names['length'], ascending=False)
+        )
 def filter_div_like_noness(
     df,
     n_observartions_cutoff=1, # Minimum number of observations for a grna to be considered
@@ -330,9 +343,10 @@ def filter_high_gr(
 
     )
 
-# filter_div_like_ess(
-#     df=dfs['lLAG08'],
-# )
+filter_div_like_ess(
+    df=dfs['lLAG10'],
+    query=['yncF']
+)
 
 # filter_div_like_noness(
 #     df=dfs['lLAG10'],
@@ -365,9 +379,9 @@ def filter_high_gr(
 #     df=dfs['lLAG08'],
 # )
 
-filter_wide_ess(
-    df=dfs['lLAG08'],
-)
+# filter_wide_ess(
+#     df=dfs['lLAG08'],
+# )
 
 # filter_wide_noness(
 #     df=dfs['lLAG10'],
