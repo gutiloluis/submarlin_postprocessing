@@ -9,8 +9,21 @@ exp_groups = ['lLAG08', 'lLAG10']
 metadata_dfs = {key: pd.read_pickle(filepaths.final_barcodes_df_condensed_filenames[key])
                 [['Experiment #', 'File Index', 'File Trench Index', 'opLAG1_id', 'Gene']]
                 for key in exp_groups}
+
 #%%
-metadata_variant = sample_variant_kymos.filter_metadata(metadata_dfs['lLAG08'], 1221)
+exp_group = 'lLAG08'
+df = metadata_dfs[exp_group]
+
+#%%
+exp_group = 'lLAG10'
+# metadata_variant = sample_variant_kymos.filter_metadata(
+#     metadata_dfs[exp_group],filepaths.genes_surprising_hits['fast_growth'][exp_group]
+# )
+metadata_variant = sample_variant_kymos.filter_metadata(
+    metadata_dfs[exp_group], 
+    'yeeC',
+)
+metadata_variant
 #%%
 sample_variant_kymos.show_single_kymo_iloc(
     metadata=metadata_variant,
@@ -32,7 +45,7 @@ sample_variant_kymos.show_multiple_kymos(
     kymograph_paths=filepaths.kymograph_paths,
     every_n_frames=3,
     random_sample=True,
-    random_sample_n=10
+    random_sample_n=20
 )
 
 

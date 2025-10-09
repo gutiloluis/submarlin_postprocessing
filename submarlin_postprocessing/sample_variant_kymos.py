@@ -145,9 +145,14 @@ def filter_metadata(
     elif isinstance(query, str):
         return metadata.loc[metadata['Gene'] == query, :]
     elif isinstance(query, list):
-        return metadata.loc[metadata['Gene'].isin(query), :]
+        if isinstance(query[0], str):
+            return metadata.loc[metadata['Gene'].isin(query), :]
+        elif isinstance(query[0], int):
+            return metadata.loc[metadata['opLAG1_id'].isin(query), :]
+        else:
+            raise ValueError("Query must be an integer (variant_id), string (gene), list (genes), or list (variant_id).")
     else:
-        raise ValueError("Query must be an integer (variant_id), string (gene), or list (genes).")
+        raise ValueError("Query must be an integer (variant_id), string (gene), list (genes), or list (variant_id).")
 
 def parse_metadata_row(
     metadata_row: pd.Series,

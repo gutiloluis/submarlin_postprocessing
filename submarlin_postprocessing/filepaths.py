@@ -3,7 +3,6 @@ from pathlib import Path
 import pandas as pd
 headpath = Path("/home/lag36/scratch/lag36/")
 
-
 # Individual experiment paths
 # Experiment paths
 
@@ -269,7 +268,7 @@ short_labels = {'Mean (Robust)_Delta time (s)': r'$ \tau $',
                 'Mean (Robust)_mCherry mean_intensity': r'$ I_{rpsL} $',
                 'Mean (Robust)_Instantaneous Growth Rate: Volume': r'$ \lambda $'}
 long_labels = {'Mean (Robust)_Delta time (s)': 'Interdivision Time (s)',
-                'Mean (Robust)_Septum Displacement Length Normalized': 'Septum Displacement Length Normalized',
+                'Mean (Robust)_Septum Displacement Length Normalized': 'Normalized Septum Displacement',
                 'Mean (Robust)_Length': 'Length ($\mu$m)',
                 'Mean (Robust)_Width': 'Width ($\mu$m)',
                 'Mean (Robust)_mCherry mean_intensity': 'mCherry Mean Intensity (AU)',
