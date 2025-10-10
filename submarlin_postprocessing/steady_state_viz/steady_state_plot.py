@@ -27,11 +27,79 @@ dfs = {key: steady_state_viz.load_and_pivot_all_steady_state_dfs(
 # metadata_dfs = {key: pd.read_pickle(filepaths.final_barcodes_df_condensed_filenames[key])
 #                 [['Experiment #', 'File Index', 'File Trench Index', 'opLAG1_id', 'Gene']]
 #                 for key in exp_groups}
-
-column_names = filepaths.column_names
+#%%
+column_names = filepaths.column_names_no_est
 short_label = filepaths.short_labels
 long_label = filepaths.long_labels
 
+#%%
+############################################################
+## Load data with p-value
+############################################################
+steady_state_estimator_pvalues_filenames = filepaths.steady_state_estimator_pvalues_filenames
+# steady_state_estimator_pvalues_filenames = filepaths.steady_state_estimator_filtered_filenames # No p-values
+df = pd.read_pickle(steady_state_estimator_pvalues_filenames['lLAG08'])
+df
+
+estimator = 'Mean (Robust)'
+variable = column_names['length']
+
+df_var = df.loc[estimator, variable]
+(
+    df_var
+    # .loc[lambda df_:df_['Gene'].isin(filepaths.genes_replication)]
+    .loc[lambda df_: (df_['Corrected P-Value'] < 0.05)
+        & (df_['Value'] < 2.972953 - 2*0.036242) # 2 std above mean
+        , :]
+    ['Gene'].value_counts().head(30)
+)
+#%%
+
+#%%
+fig, axs = plt.subplots(1, 2, figsize=(8,4))
+ax=axs[0]
+(
+    df
+    .loc['Mean (Robust)', column_names['length']]
+    .assign(nlog10pval = lambda df_:df_['Corrected P-Value'].apply(lambda x: -np.log10(x) if x > 0 else 0))
+    .plot(x='Value', y='nlog10pval', kind='scatter', s=2, ax=ax, alpha=0.1)
+)
+
+(
+    df
+    .loc['Mean (Robust)', column_names['length']]
+    .loc[lambda df_:df_['Category']=='control', :]
+    .assign(nlog10pval = lambda df_:df_['Corrected P-Value'].apply(lambda x: -np.log10(x) if x > 0 else 0))
+    .plot(x='Value', y='nlog10pval', kind='scatter', s=2, c='g', ax=ax)
+)
+
+(
+    df
+    .loc['Mean (Robust)', column_names['length']]
+    .loc[lambda df_:df_['Gene'].isin(filepaths.genes_divisome)]
+    .assign(nlog10pval = lambda df_:df_['Corrected P-Value'].apply(lambda x: -np.log10(x) if x > 0 else 0))
+    .plot(x='Value', y='nlog10pval', kind='scatter', s=2, c='r', ax=ax, alpha=0.5)
+)
+
+# (
+#     df
+    # .loc['Mean (Robust)', column_names['length']]
+
+    # .loc[lambda df_:df_['Gene'].isin(filepaths.genes_replication)]
+    # .assign(nlog10pval = lambda df_:df_['Corrected P-Value'].apply(lambda x: -np.log10(x) if x > 0 else 0))
+    # .plot(x='Value', y='nlog10pval', kind='scatter', s=2, c='y', ax=ax, alpha=0.5)
+# )
+
+ax.axhline(-np.log10(0.05), color='red', linestyle='--', linewidth=1)
+ax.axvline(2.972953-2*0.036242, color='blue', linestyle='--', linewidth=1)
+ax.axvline(2.972953+2*0.036242, color='blue', linestyle='--', linewidth=1)
+#%%
+(
+    df
+    .loc['Mean (Robust)', column_names['length']]
+    .loc[lambda df_:df_['Category']=='control', :]
+    .agg({'Value': ['mean', 'std']})
+)
 #%%
 ############################################################
 ## Figure 2
