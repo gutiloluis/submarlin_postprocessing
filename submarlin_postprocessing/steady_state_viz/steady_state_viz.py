@@ -42,6 +42,39 @@ def pivot_steady_state_df(
 
     return df_output.merge(df_grna, on=index_name, how='left')
 
+def pivot_pvalue_df(
+    df: pd.DataFrame,
+    index_name: str = 'opLAG1_id',
+    cols_grnas: list[str] = ['locus_tag', 'Gene',
+                'Category', 'N Observations'],
+    values: list[str] = ['Value', 'P-Value', 'Corrected P-Value'],
+    remove_key: str = '(True)' # Keep only robust estimators
+) -> pd.DataFrame:
+    """
+    Pivot the steady state p-value DataFrame from the original format to a more usable format.
+    """
+    df_output = (
+        df
+        .reset_index()
+        .loc[lambda df_: ~df_['Estimator'].astype(str).str.contains(remove_key, regex=False), :]
+        .pivot(
+            index=index_name,
+            columns='Variable(s)',
+            values=values
+        )
+        .reset_index()
+    )
+    df_grna = (
+        df
+        .loc[:, cols_grnas]
+        .reset_index()
+        .drop(columns=['Estimator', 'Variable(s)'])
+        .drop_duplicates(subset=index_name)
+        .set_index(index_name)
+    )
+    df_grna.columns = pd.MultiIndex.from_product([['grna'], df_grna.columns])
+    return df_output.merge(df_grna, on=index_name, how='left')
+
 def load_and_pivot_all_steady_state_dfs(
     cell_cycle_df_estimators_filename: str,
     growth_df_estimators_filename: str,
