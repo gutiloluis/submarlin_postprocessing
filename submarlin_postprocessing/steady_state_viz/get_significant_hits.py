@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 
 column_names = filepaths.column_names
+column_names_no_est = filepaths.column_names_no_est
 genes_divisome = filepaths.genes_divisome
 genes_replication = filepaths.genes_replication
 genes_elongasome = filepaths.genes_elongasome
@@ -15,6 +16,7 @@ genes_cell_wall_precursors = filepaths.genes_cell_wall_precursors
 genes_teichoic_acid = filepaths.genes_teichoic_acid
 
 exp_groups = ['lLAG08', 'lLAG10']
+# steady state (the first ones)
 dfs = {key: steady_state_viz.load_and_pivot_all_steady_state_dfs(
     filepaths.steady_state_cell_cycle_df_estimators_filenames[key],
     filepaths.steady_state_growth_df_estimators_filenames[key],
@@ -27,6 +29,92 @@ dfs = {key: steady_state_viz.load_and_pivot_all_steady_state_dfs(
     remove_key='(True)' # Keep only robust estimators
 ) for key in exp_groups}
 
+# p-values
+dfs_stats = {key: pd.read_pickle(
+    filepaths.steady_state_estimator_pvalues_filenames[key]
+    ) for key in exp_groups}
+
+# steady state filtered
+dfs_filt = {key: pd.read_pickle(
+    filepaths.steady_state_estimator_filtered_filenames[key])
+ for key in exp_groups}
+
+# control stats
+dfs_controls_stats = {key: pd.read_pickle(
+    filepaths.control_stats_filenames[key]
+    ) for key in exp_groups}
+
+dfs_stats = {key:
+    steady_state_viz.pivot_pvalue_df(
+        df=dfs_stats[key],
+        index_name='opLAG1_id',
+        cols_grnas=['locus_tag', 'Gene',
+                    'Category', 'N Observations'],
+        values=['Value', 'Corrected P-Value'],
+        remove_key='(True)' # Keep only robust estimators
+    )
+    for key in exp_groups
+}
+#%%
+estimator = 'Mean (Robust)'
+exp = 'lLAG08'
+
+df_stats = dfs_stats[exp]
+df_controls_stats = dfs_controls_stats[exp]
+
+variable_pval = column_names_no_est['length']
+variable_non_signif = column_names_no_est['growth_rate']
+# n_stds = 2
+(
+    df_stats
+    .loc[lambda df_: df_['Corrected P-Value', variable_pval] < 0.05]
+    .loc[lambda df_: df_['Corrected P-Value', variable_non_signif] > 0.05]
+    .loc[lambda df_: df_['Value', variable_non_signif] < df_controls_stats.loc['mean+3std', variable_non_signif]]
+    .loc[lambda df_: df_['Value', variable_non_signif] > df_controls_stats.loc['mean-3std', variable_non_signif]]
+    .loc[lambda df_: df_['Value', variable_pval] > df_controls_stats.loc['mean+3std', variable_pval]]
+    .loc[lambda df_: ~df_['grna', 'Gene'].isin(filepaths.genes_replication)]
+    .loc[lambda df_: ~df_['grna', 'Gene'].isin(filepaths.genes_divisome)]
+    .groupby(('grna','Gene'))
+    .size()
+    .sort_values(ascending=False)
+    .head(30)
+)
+
+# %%
+
+def generate_controls_stats(
+    df, # DataFrame with all data
+    column_names, # Column names to get mean and std from
+    out_filename,
+):
+    ''' 
+    Generate control stats file
+    '''
+    stats = (
+        df
+        .loc[lambda df_: df_['Category'] == 'control', :]
+        .agg({
+            column_name: ['mean', 'std'] 
+            for column_name in column_names.values()
+        })
+    )
+    # Add rows for 2*std and 3*std
+    stats.loc['2std'] = stats.loc['std'] * 2
+    stats.loc['3std'] = stats.loc['std'] * 3
+    stats.loc['mean+2std'] = stats.loc['mean'] + stats.loc['2std']
+    stats.loc['mean+3std'] = stats.loc['mean'] + stats.loc['3std']
+    stats.loc['mean-2std'] = stats.loc['mean'] - stats.loc['2std']
+    stats.loc['mean-3std'] = stats.loc['mean'] - stats.loc['3std']
+    stats.to_pickle(out_filename)
+# How to run:
+# for exp in exp_groups:
+#     df = dfs_filt[exp]
+#     out_filename = filepaths.control_stats_filenames[exp]
+#     generate_controls_stats(
+#         df=df,
+#         column_names=column_names_no_est,
+#         out_filename=out_filename,
+#     )
 def _aggregate_max(df, func_name='max', n_observations_cutoff=1):
     return (
         df
