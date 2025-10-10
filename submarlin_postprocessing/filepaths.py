@@ -249,7 +249,21 @@ df_bar_per_trench_filenames = {
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_df_bar_per_trench.pkl',
 }
 
+# p-values
+steady_state_estimator_pvalues_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_df_Estimators_wStats.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_df_Estimators_wStats.pkl',
+}
 
+steady_state_estimator_filtered_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_df_Robust_Mean_Filtered.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_df_Robust_Mean_Filtered.pkl',
+}
+
+control_stats_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / 'controls_stats.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / 'controls_stats.pkl',
+}
 
 ##############################################
 # Column names, axes labels, etc
@@ -261,6 +275,14 @@ column_names = {'t_idiv': 'Mean (Robust)_Delta time (s)',
                 'width': 'Mean (Robust)_Width',
                 'intensity': 'Mean (Robust)_mCherry mean_intensity',
                 'growth_rate': 'Mean (Robust)_Instantaneous Growth Rate: Volume'}
+
+column_names_no_est = {'t_idiv': 'Delta time (s)',
+                'sep_disp': 'Septum Displacement Length Normalized',
+                'length': 'Length',
+                'width': 'Width',
+                'intensity': 'mCherry mean_intensity',
+                'growth_rate': 'Instantaneous Growth Rate: Volume'}
+                
 short_labels = {'Mean (Robust)_Delta time (s)': r'$ \tau $',
                 'Mean (Robust)_Septum Displacement Length Normalized': r'$ L_{S} $',
                 'Mean (Robust)_Length': r'$ L $',
