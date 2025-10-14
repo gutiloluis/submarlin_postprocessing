@@ -265,6 +265,11 @@ control_stats_filenames = {
     'lLAG10': headpaths_merged['lLAG10'] / 'controls_stats.pkl',
 }
 
+steady_state_estimator_pvalues_pivoted_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / 'lLAG8_Steady_State_df_Estimators_wStats_Pivoted.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / 'lLAG10_Steady_State_df_Estimators_wStats_Pivoted.pkl',
+}
+
 ##############################################
 # Column names, axes labels, etc
 ##############################################
@@ -296,6 +301,12 @@ long_labels = {'Mean (Robust)_Delta time (s)': 'Interdivision Time (s)',
                 'Mean (Robust)_mCherry mean_intensity': 'mCherry Mean Intensity (AU)',
                 'Mean (Robust)_Instantaneous Growth Rate: Volume': 'Growth Rate (1/hr)'}
 
+long_labels_no_est = {'Delta time (s)': 'Interdivision Time (s)',
+                'Septum Displacement Length Normalized': 'Normalized Septum Displacement',
+                'Length': 'Length ($\mu$m)',
+                'Width': 'Width ($\mu$m)',
+                'mCherry mean_intensity': 'mCherry Mean Intensity (AU)',
+                'Instantaneous Growth Rate: Volume': 'Growth Rate (1/hr)'} 
 ##############################################
 # Gene subsets Subtiwiki
 ##############################################
@@ -410,5 +421,53 @@ genes_known_prototypical = {
             'walI' # Weaker than walJ/H but also part of the walRKHIJ operon
             'ripX', # Ter resolution    
         ]
+    }
+}
+
+indices_last_t = {
+    'lLAG08': {
+        'rplQ': {
+            1221: [211173, 529820, 616169, 240081, 14090, 545118]
+        },
+        'divIC': {
+            287: [492968, 196360, 192650, 359776, 152244, 313901, 222881, 300309486, 297342],
+        },
+        'ftsW': {
+            2111: [516853, 300165910, 300103878, 137050, 300310990, 300539796]
+        }
+        'ftsL': {
+            2138: [492968, 196360, 192650, 359776],
+        },
+        'ftsZ': {
+            2304: [300136395, 46981, 300239180, 563206, 149952, 629607],
+            2292: [300339405, 300091643, 336548, 204389, 300546637, 107705],
+        },
+        'dnaA': {
+            14: [189112, 300271991, 587972, 443534, 610751, 226194, 56704],
+        },
+        'polC': {
+            2898: [571034, 300097445, 300174543, 183873, 300233204],
+        },
+        'dnaN': {
+            37: [300105644, 19165, 452327, 300138663],
+        },
+    },
+
+    'lLAG10': {
+        'fliH': {
+            #  [100749276, 100722851, 100295967, 100425999],
+        },
+        'ctsR': {
+            173: [100233902, 100496496, 100505664, 100358140]
+        },
+        'clpC': {
+            182: [100251045, 100610229, 100597341, 100116157]
+        },
+        'fliE': {
+            4371: [100703244, 100405526, 100126596, 100770909, 100200251]
+        },
+        'rplK': {
+            209: [100227096, 100225637, 100356625]
+        }
     }
 }
