@@ -1,13 +1,9 @@
-
 from pathlib import Path
 import re
-
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-
 ############################################################
 ## Functions for verifying kymograph files
 ############################################################
@@ -278,6 +274,47 @@ def show_multiple_kymos(
     plt.tight_layout()
     plt.show()
 
+def show_last_timepoints(
+    metadata: pd.DataFrame,
+    key_experiment_numbers_after_merge_to_key: dict[int, str],
+    kymograph_paths: dict[str, Path],
+    ax: plt.Axes,
+    pad_width: int = 5,
+    title="",
+    
+):
+    """
+    Show the last timepoints of all kymographs in the metadata DataFrame.
+    """
+    imgs = np.array([], dtype=np.uint16)
+    for idx in range(len(metadata)):
+        metadata_row = metadata.iloc[idx]
+        experiment_key, file_idx, file_trench_idx = parse_metadata_row(
+            metadata_row=metadata_row,
+            key_experiment_numbers_after_merge_to_key=key_experiment_numbers_after_merge_to_key,
+        )
+        orientation = metadata_row['lane orientation']
+        img = load_array_from_hdf5(
+            file_idx=file_idx,
+            headpath=kymograph_paths[experiment_key],
+            prefix='kymograph_',
+            key='mCherry'
+        )[file_trench_idx][-1]
+
+        if orientation == 'bottom':
+            img = np.flipud(img)
+
+        pad_color = np.percentile(img, 2)
+        # Append to imgs array
+        imgs = np.concatenate((imgs, img), axis=1) if imgs.size else img
+        # Append padding
+        imgs = np.concatenate((imgs, np.full((img.shape[0], pad_width), pad_color, dtype=np.uint16)), axis=1)
+
+    # plt.figure(figsize=(30, 5))
+    ax.set_title(title)
+    ax.imshow(imgs, cmap='gray')
+    ax.axis('off')
+    
 #%% Run file verifications
 # print("Verifying kymograph files...")
 # verify_file_numbers_all_experiments_all_groups(
