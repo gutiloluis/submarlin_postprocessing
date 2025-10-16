@@ -30,9 +30,9 @@ dfs = {key: steady_state_viz.load_and_pivot_all_steady_state_dfs(
 ) for key in exp_groups}
 
 # p-values
-dfs_stats = {key: pd.read_pickle(
-    filepaths.steady_state_estimator_pvalues_filenames[key]
-    ) for key in exp_groups}
+# dfs_stats = {key: pd.read_pickle(
+#     filepaths.steady_state_estimator_pvalues_filenames[key]
+#     ) for key in exp_groups}
 
 # steady state filtered
 dfs_filt = {key: pd.read_pickle(
@@ -44,43 +44,297 @@ dfs_controls_stats = {key: pd.read_pickle(
     filepaths.control_stats_filenames[key]
     ) for key in exp_groups}
 
-dfs_stats = {key:
-    steady_state_viz.pivot_pvalue_df(
-        df=dfs_stats[key],
-        index_name='opLAG1_id',
-        cols_grnas=['locus_tag', 'Gene',
-                    'Category', 'N Observations'],
-        values=['Value', 'Corrected P-Value'],
-        remove_key='(True)' # Keep only robust estimators
-    )
-    for key in exp_groups
-}
-#%%
-estimator = 'Mean (Robust)'
-exp = 'lLAG08'
+# p-values pivoted
+dfs_stats = {key: pd.read_pickle(
+    filepaths.steady_state_estimator_pvalues_pivoted_filenames[key]
+    ) for key in exp_groups}
 
+#%% 
+def filter_div_like(
+    df_stats,
+    df_controls_stats,
+    variable_signif='length',
+    variable_non_signif='growth_rate',
+):
+    variable_pval = column_names_no_est[variable_signif]
+    variable_non_signif = column_names_no_est[variable_non_signif]
+    # n_stds = 2
+    return (
+        df_stats
+        .loc[lambda df_: df_['Corrected P-Value', variable_pval] < 0.005]
+        # .loc[lambda df_: df_['Corrected P-Value', variable_non_signif] > 0.05]
+        .loc[lambda df_: df_['Value', variable_non_signif] < df_controls_stats.loc['mean+3std', variable_non_signif]]
+        .loc[lambda df_: df_['Value', variable_non_signif] > df_controls_stats.loc['mean-3std', variable_non_signif]]
+        .loc[lambda df_: df_['Value', variable_pval] > df_controls_stats.loc['mean+2std', variable_pval]]
+        .loc[lambda df_: df_['grna', 'Gene'].isin(genes_replication)]
+        # .loc[lambda df_: df_['grna', 'Gene'].isin(genes_divisome)]
+        # .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_fla_che)]
+        # .sort_values(by=variable_pval, ascending=False)
+        .groupby(('grna','Gene'))
+        .first()
+        # .sort_values(ascending=False)
+        .head(30)
+    )
+
+
+
+def filter_low_gr_not_long(
+    df_stats,
+    df_controls_stats,
+    variable_signif='growth_rate',
+    variable_non_signif='length',
+):
+    variable_pval = column_names_no_est[variable_signif]
+    variable_non_signif = column_names_no_est[variable_non_signif]
+    # n_stds = 2
+    return (
+        df_stats
+        .loc[lambda df_: df_['Corrected P-Value', variable_pval] < 0.05]
+        # .loc[lambda df_: df_['Corrected P-Value', variable_non_signif] > 0.05]
+        .loc[lambda df_: df_['Value', variable_non_signif] < df_controls_stats.loc['mean+3std', variable_non_signif]]
+        .loc[lambda df_: df_['Value', variable_pval] < df_controls_stats.loc['mean-2std', variable_pval]]
+        .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_replication)]
+        .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_divisome)]
+        .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_fla_che)]
+        .groupby(('grna','Gene'))
+        .size()
+        .sort_values(ascending=False)
+        .head(30)
+    )
+
+def filter_sep_disp(
+    df_stats,
+    df_controls_stats,
+    variable_signif='sep_disp',
+    variable_non_signif='length',
+):
+    variable_pval = column_names_no_est[variable_signif]
+    variable_non_signif = column_names_no_est[variable_non_signif]
+    # n_stds = 2
+    return (
+        df_stats
+        .loc[lambda df_: df_['Corrected P-Value', variable_pval] < 0.05]
+        # .loc[lambda df_: df_['Corrected P-Value', variable_non_signif] > 0.05]
+        # .loc[lambda df_: df_['Value', variable_non_signif] < df_controls_stats.loc['mean+3std', variable_non_signif]]
+        # .loc[lambda df_: df_['Value', variable_pval] > df_controls_stats.loc['mean+2std', variable_pval]]
+        .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_segregation)]
+        .loc[lambda df_: ~df_['grna', 'Gene'].str.startswith('rpl')]
+        .loc[lambda df_: ~df_['grna', 'Gene'].str.startswith('rps')]
+        .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_divisome)]
+        .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_replication)]
+        .groupby(('grna','Gene'))
+        .size()
+        .sort_values(ascending=False)
+        .head(30)
+    )
+
+def filter_small_length(
+    df_stats,
+    df_controls_stats,
+    variable_signif='length',
+):
+    variable_pval = column_names_no_est[variable_signif]
+    # n_stds = 2
+    return (
+        df_stats
+        .loc[lambda df_: df_['Corrected P-Value', variable_pval] < 0.05]
+        .loc[lambda df_: df_['Value', variable_pval] < df_controls_stats.loc['mean-2std', variable_pval]]
+        # .loc[lambda df_: ~df_['grna', 'Gene'].str.startswith('rpl')]
+        # .loc[lambda df_: ~df_['grna', 'Gene'].str.startswith('rps')]
+        # .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_divisome)]
+        .groupby(('grna','Gene'))
+        .size()
+        .sort_values(ascending=False)
+        .head(30)
+    )
+
+def filter_wide(
+    df_stats,
+    df_controls_stats,
+    variable_signif='width',
+):
+    variable_pval = column_names_no_est[variable_signif]
+    # n_stds = 2
+    return (
+        df_stats
+        .loc[lambda df_: df_['Corrected P-Value', variable_pval] < 0.05]
+        .loc[lambda df_: df_['Value', variable_pval] > df_controls_stats.loc['mean+2std', variable_pval]]
+        .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_elongasome)]
+        .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_teichoic_acid)]
+        .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_cell_wall_precursors)]
+        .groupby(('grna','Gene'))
+        .size()
+        .sort_values(ascending=False)
+        .head(30)
+    )
+
+exp = 'lLAG08'
+df_stats = dfs_stats[exp]
+df_controls_stats = dfs_controls_stats[exp]
+filter_wide(
+    df_stats=df_stats,
+    df_controls_stats=df_controls_stats,
+    variable_signif='width',
+)
+
+
+#%%
+exp = 'lLAG08'
+df_stats = dfs_stats[exp]
+df_controls_stats = dfs_controls_stats[exp]
+filter_small_length(
+    df_stats=df_stats,
+    df_controls_stats=df_controls_stats,
+    variable_signif='length',
+)
+
+#%%
+
+exp = 'lLAG08'
+df_stats = dfs_stats[exp]
+df_controls_stats = dfs_controls_stats[exp]
+filter_sep_disp(
+    df_stats=df_stats,
+    df_controls_stats=df_controls_stats,
+    variable_signif='sep_disp',
+    variable_non_signif='length',
+)
+
+exp = 'lLAG10'
+df_stats = dfs_stats[exp]
+df_controls_stats = dfs_controls_stats[exp]
+filter_low_gr_not_long(
+    df_stats=df_stats,
+    df_controls_stats=df_controls_stats,
+    variable_signif='growth_rate',
+    variable_non_signif='length',
+)
+#%%
+exp = 'lLAG08'
+df_stats = dfs_stats[exp]
+df_controls_stats = dfs_controls_stats[exp]
+filter_div_like(
+    df_stats=df_stats,
+    df_controls_stats=df_controls_stats,
+    variable_signif='length',
+    variable_non_signif='growth_rate',
+)
+
+#####################################
+# Visual Inspection
+#####################################
+#%% Length
+column_names = filepaths.column_names_no_est
+var = 'width'
+exp = 'lLAG10'
 df_stats = dfs_stats[exp]
 df_controls_stats = dfs_controls_stats[exp]
 
-variable_pval = column_names_no_est['length']
-variable_non_signif = column_names_no_est['growth_rate']
-# n_stds = 2
-(
+grna_number_cutoff = 1
+grnas_significant = (
     df_stats
-    .loc[lambda df_: df_['Corrected P-Value', variable_pval] < 0.05]
-    .loc[lambda df_: df_['Corrected P-Value', variable_non_signif] > 0.05]
-    .loc[lambda df_: df_['Value', variable_non_signif] < df_controls_stats.loc['mean+3std', variable_non_signif]]
-    .loc[lambda df_: df_['Value', variable_non_signif] > df_controls_stats.loc['mean-3std', variable_non_signif]]
-    .loc[lambda df_: df_['Value', variable_pval] > df_controls_stats.loc['mean+3std', variable_pval]]
-    .loc[lambda df_: ~df_['grna', 'Gene'].isin(filepaths.genes_replication)]
-    .loc[lambda df_: ~df_['grna', 'Gene'].isin(filepaths.genes_divisome)]
+    # .loc[lambda df_: df_['Corrected P-Value', column_names[var]] < 0.05]
+    .loc[lambda df_: df_['Value', column_names[var]] > df_controls_stats.loc['mean+3std', column_names[var]]]
     .groupby(('grna','Gene'))
     .size()
     .sort_values(ascending=False)
-    .head(30)
+    .loc[lambda s_: s_ >= grna_number_cutoff]
+    .to_frame()
+    .reset_index()
+    .rename(columns ={
+        0: 'n_grnas',
+        '(grna, Gene)':('grna', 'Gene')
+    })
 )
 
-# %%
+grnas_significant.columns = pd.MultiIndex.from_tuples([
+    c if isinstance(c, tuple) else ('grna', c)
+    for c in grnas_significant.columns
+])
+
+grnas_significant
+#%%
+(
+    df_stats
+    .loc[lambda df_: df_['Corrected P-Value', column_names[var]] < 0.2]
+    .loc[lambda df_: df_['Value', column_names[var]] > df_controls_stats.loc['mean+2std', column_names[var]]]
+    .sort_values(by=('Value', column_names[var]), ascending=False)
+    # .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_divisome)]
+    # .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_replication)]
+    # .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_segregation)]
+    .loc[lambda df_: ~df_['grna', 'Gene'].str.startswith('rp')]
+    .loc[:, [('grna', 'Gene'),('opLAG1_id', ''), ('Value', column_names[var]), ('Corrected P-Value', column_names[var]), ('grna', 'N Observations')]]
+    .groupby(('grna','Gene'))
+    .apply(lambda g: g.loc[g[('Value', column_names[var])].idxmax()])
+    .drop(columns=[('grna', 'Gene')])
+    .reset_index()
+    .sort_values(by=('Value', column_names[var]), ascending=False)
+    .merge(
+        grnas_significant,
+        on=[('grna','Gene')],
+        how='inner'
+    )
+    # ['grna','Gene']
+    # .iloc[200:]
+    # .to_list()
+)
+#%%
+column_names = filepaths.column_names_no_est
+var = 'sep_disp'
+df_stats = dfs_stats['lLAG08']
+(
+    df_stats
+    .loc[lambda df_: df_['Corrected P-Value', column_names['sep_disp']] < 0.005]
+    .loc[lambda df_: df_['Value', column_names['sep_disp']] > 0.04]
+    .sort_values(by=('Value', column_names['sep_disp']), ascending=True)
+    .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_divisome)]
+    .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_replication)]
+    .loc[lambda df_: ~df_['grna', 'Gene'].str.startswith('rp')]
+    .loc[:, [('grna', 'Gene'),('opLAG1_id', ''), ('Value', column_names['sep_disp']), ('Corrected P-Value', column_names['sep_disp']), ('grna', 'N Observations')]]
+    .head(20)
+    # .groupby(('grna','Gene'))
+    # .size()
+    # .sort_values(ascending=False)
+)
+#%%
+column_names = filepaths.column_names_no_est
+var = 'width'
+df_stats = dfs_stats['lLAG08']
+(
+    df_stats
+    .loc[lambda df_: df_['Corrected P-Value', column_names[var]] < 0.005]
+    .loc[lambda df_: df_['Value', column_names[var]] > 1.2]
+    .sort_values(by=('Value', column_names[var]), ascending=False)
+    .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_divisome)]
+    .loc[lambda df_: ~df_['grna', 'Gene'].str.startswith('rp')]
+    .loc[:, [('grna', 'Gene'),('opLAG1_id', ''), ('Value', column_names[var]), ('Corrected P-Value', column_names[var]), ('grna', 'N Observations')]]
+    .head(20)
+    # .groupby(('grna','Gene'))
+    # .size()
+    # .sort_values(ascending=False)
+)
+#%%
+column_names = filepaths.column_names_no_est
+var = 'growth_rate'
+df_stats = dfs_stats['lLAG08']
+(
+    df_stats
+    .loc[lambda df_: df_['Corrected P-Value', column_names[var]] < 0.005]
+    .loc[lambda df_: df_['Value', column_names[var]] < 0.8]
+    .sort_values(by=('Value', column_names[var]), ascending=True)
+    .loc[lambda df_: ~df_['grna', 'Gene'].isin(genes_divisome)]
+    # .loc[lambda df_: ~df_['grna', 'Gene'].str.startswith('rp')]
+    .loc[:, [('grna', 'Gene'),('opLAG1_id', ''), ('Value', column_names[var]), ('Corrected P-Value', column_names[var]), ('grna', 'N Observations')]]
+    # .head(40)
+    .groupby(('grna','Gene'))
+    .first()
+    .sort_values(by=('Value', column_names[var]), ascending=True)
+    .head(30)
+    # .sort_values(ascending=False)
+)
+#%%
+
+def pivot_pvalue_df
 
 def generate_controls_stats(
     df, # DataFrame with all data

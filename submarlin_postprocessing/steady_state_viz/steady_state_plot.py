@@ -7,7 +7,7 @@ import seaborn as sns
 import numpy as np
 
 plt.style.use('steady_state.mplstyle')
-#%%
+
 ############################################################
 ## Load data
 ############################################################
@@ -27,79 +27,294 @@ dfs = {key: steady_state_viz.load_and_pivot_all_steady_state_dfs(
 # metadata_dfs = {key: pd.read_pickle(filepaths.final_barcodes_df_condensed_filenames[key])
 #                 [['Experiment #', 'File Index', 'File Trench Index', 'opLAG1_id', 'Gene']]
 #                 for key in exp_groups}
-#%%
-column_names = filepaths.column_names_no_est
-short_label = filepaths.short_labels
-long_label = filepaths.long_labels
 
-#%%
+column_names = filepaths.column_names_no_est
+# short_label = filepaths.short_labels
+long_label = filepaths.long_labels_no_est
+
 ############################################################
 ## Load data with p-value
 ############################################################
-steady_state_estimator_pvalues_filenames = filepaths.steady_state_estimator_pvalues_filenames
-# steady_state_estimator_pvalues_filenames = filepaths.steady_state_estimator_filtered_filenames # No p-values
-df = pd.read_pickle(steady_state_estimator_pvalues_filenames['lLAG08'])
-df
+dfs_stats = {
+    key: pd.read_pickle(
+        filepaths.steady_state_estimator_pvalues_pivoted_filenames[key]) 
+        for key in exp_groups
+}
 
-estimator = 'Mean (Robust)'
-variable = column_names['length']
-
-df_var = df.loc[estimator, variable]
-(
-    df_var
-    # .loc[lambda df_:df_['Gene'].isin(filepaths.genes_replication)]
-    .loc[lambda df_: (df_['Corrected P-Value'] < 0.05)
-        & (df_['Value'] < 2.972953 - 2*0.036242) # 2 std above mean
-        , :]
-    ['Gene'].value_counts().head(30)
-)
-#%%
+dfs_controls_stats = {key: pd.read_pickle(
+    filepaths.control_stats_filenames[key]
+    ) for key in exp_groups}
+    
+for exp in exp_groups:
+    for key in column_names.keys():
+        dfs_stats[exp][('nlog10pval', column_names[key])] = dfs_stats[exp][('Corrected P-Value', column_names[key])].apply(lambda x: -np.log10(x) if x > 0 else 0)
 
 #%%
+import submarlin_postprocessing.filepaths as filepaths
+import submarlin_postprocessing.sample_variant_kymos as sample_variant_kymos
+
+exp_groups = ['lLAG08', 'lLAG10']
+metadata_dfs = {key: pd.read_pickle(filepaths.final_barcodes_df_condensed_filenames[key])
+                [['Experiment #', 'File Index', 'File Trench Index', 'opLAG1_id', 'Gene', 'lane orientation']]
+                .astype(
+                    {
+                        'Experiment #': 'uint8',
+                        # 'File Index': 'Int64',
+                        # 'File Trench Index': 'Int64',
+                        # 'opLAG1_id': 'Int64',
+                        # 'Gene': 'string',
+                        'lane orientation': 'category',
+                    }
+                )
+                for key in exp_groups}
+
+#%%
+experiment_numbers_after_merge_to_key = filepaths.experiment_numbers_after_merge_to_key
+exp_key = 'lLAG08'
+
+indices_annotate_volcano = filepaths.indices_annotate_volcano[exp_key]
+indices_last_t = filepaths.indices_last_t[exp_key]['rplQ'][1221]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+
 fig, axs = plt.subplots(1, 2, figsize=(8,4))
-ax=axs[0]
-(
-    df
-    .loc['Mean (Robust)', column_names['length']]
-    .assign(nlog10pval = lambda df_:df_['Corrected P-Value'].apply(lambda x: -np.log10(x) if x > 0 else 0))
-    .plot(x='Value', y='nlog10pval', kind='scatter', s=2, ax=ax, alpha=0.1)
+
+sample_variant_kymos.show_last_timepoints(
+    metadata=metadata_var,
+    key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    pad_width=2,
+    title='rplQ',
+    ax=axs[1],
 )
 
-(
-    df
-    .loc['Mean (Robust)', column_names['length']]
-    .loc[lambda df_:df_['Category']=='control', :]
-    .assign(nlog10pval = lambda df_:df_['Corrected P-Value'].apply(lambda x: -np.log10(x) if x > 0 else 0))
-    .plot(x='Value', y='nlog10pval', kind='scatter', s=2, c='g', ax=ax)
+df_stats = dfs_stats[exp_key]
+df_annotate = df_stats.loc[
+    lambda df_: df_['opLAG1_id'].isin(indices_annotate_volcano['length']),
+]
+
+steady_state_viz.show_volcano_plot(
+    df_stats = df_stats,
+    var=column_names['length'],
+    ax=axs[0],
+    df_annotate = df_annotate,
+    df_control_stats = dfs_controls_stats[exp_key],
+    subset_gene_list = filepaths.genes_divisome,
+    label_dict = long_label,
 )
 
-(
-    df
-    .loc['Mean (Robust)', column_names['length']]
-    .loc[lambda df_:df_['Gene'].isin(filepaths.genes_divisome)]
-    .assign(nlog10pval = lambda df_:df_['Corrected P-Value'].apply(lambda x: -np.log10(x) if x > 0 else 0))
-    .plot(x='Value', y='nlog10pval', kind='scatter', s=2, c='r', ax=ax, alpha=0.5)
+#%%
+fig, axs = plt.subplots(4, 2, figsize=(6,15))
+ax=axs[0,0]
+df = dfs_stats[exp_key]
+df_control_stats = dfs_controls_stats[exp_key]
+
+key = 'length'
+df_annotate = df_stats.loc[
+    lambda df_: df_['opLAG1_id'].isin(indices_annotate_volcano[key]),
+]
+steady_state_viz.show_volcano_plot(
+    df,
+    var=column_names['length'],
+    ax=ax,
+    df_annotate = df_annotate,
+    df_control_stats = df_control_stats,
+    subset_gene_list = filepaths.genes_divisome,
 )
 
-# (
-#     df
-    # .loc['Mean (Robust)', column_names['length']]
+key = 'sep_disp'
+df_annotate = df_stats.loc[
+    lambda df_: df_['opLAG1_id'].isin(indices_annotate_volcano[key]),
+]
+ax=axs[1,0]
+steady_state_viz.show_volcano_plot(
+    df,
+    var=column_names['sep_disp'],
+    ax=ax,
+    df_annotate = df_annotate,
+    df_control_stats = df_control_stats,
+    subset_gene_list = filepaths.genes_segregation,
+)
 
-    # .loc[lambda df_:df_['Gene'].isin(filepaths.genes_replication)]
-    # .assign(nlog10pval = lambda df_:df_['Corrected P-Value'].apply(lambda x: -np.log10(x) if x > 0 else 0))
-    # .plot(x='Value', y='nlog10pval', kind='scatter', s=2, c='y', ax=ax, alpha=0.5)
+key = 'width'
+df_annotate = df_stats.loc[
+    lambda df_: df_['opLAG1_id'].isin(indices_annotate_volcano[key]),
+]
+ax=axs[2,0]
+steady_state_viz.show_volcano_plot(
+    df,
+    var=column_names['width'],
+    ax=ax,
+    df_annotate = df_annotate,
+    df_control_stats = df_control_stats,
+    subset_gene_list = filepaths.genes_elongasome + filepaths.genes_cell_wall_precursors,
+)
+
+key = 'growth_rate'
+df_annotate = df_stats.loc[
+    lambda df_: df_['opLAG1_id'].isin(indices_annotate_volcano[key]),
+]
+ax=axs[3,0]
+steady_state_viz.show_volcano_plot(
+    df,
+    var=column_names['growth_rate'],
+    df_annotate = df_annotate,
+    ax=ax,
+    df_control_stats = df_control_stats,
+    # subset_gene_list = filepaths,
+)
+
+gene = 'divIC'
+indices_last_t = filepaths.indices_last_t[exp_key][gene][287]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+sample_variant_kymos.show_last_timepoints(
+    metadata=metadata_var,
+    key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    pad_width=2,
+    title=gene,
+    ax=axs[0,1],
+)
+
+gene = 'parE'
+indices_last_t = filepaths.indices_last_t[exp_key][gene][3264]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+sample_variant_kymos.show_last_timepoints(
+    metadata=metadata_var,
+    key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    pad_width=2,
+    title=gene,
+    ax=axs[1,1],
+)
+
+gene = 'alaT'
+indices_last_t = filepaths.indices_last_t[exp_key][gene][7358]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+sample_variant_kymos.show_last_timepoints(
+    metadata=metadata_var,
+    key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    pad_width=2,
+    title=gene,
+    ax=axs[2,1],
+)
+
+gene = 'eno'
+indices_last_t = filepaths.indices_last_t[exp_key][gene][5200]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+sample_variant_kymos.show_last_timepoints(
+    metadata=metadata_var,
+    key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    pad_width=2,
+    title=gene,
+    ax=axs[3,1],
+)
+
+#%% Volcano-nonessentials
+experiment_numbers_after_merge_to_key = filepaths.experiment_numbers_after_merge_to_key
+exp_key = 'lLAG10'
+
+indices_annotate_volcano = filepaths.indices_annotate_volcano[exp_key]
+# indices_last_t = filepaths.indices_last_t[exp_key]['rplK'][1221]
+# metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+
+fig, axs = plt.subplots(1, 2, figsize=(8,4))
+
+# sample_variant_kymos.show_last_timepoints(
+#     metadata=metadata_var,
+#     key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+#     kymograph_paths=filepaths.kymograph_paths,
+#     pad_width=2,
+#     title='rplK',
+#     ax=axs[1],
 # )
 
-ax.axhline(-np.log10(0.05), color='red', linestyle='--', linewidth=1)
-ax.axvline(2.972953-2*0.036242, color='blue', linestyle='--', linewidth=1)
-ax.axvline(2.972953+2*0.036242, color='blue', linestyle='--', linewidth=1)
+
+
 #%%
-(
-    df
-    .loc['Mean (Robust)', column_names['length']]
-    .loc[lambda df_:df_['Category']=='control', :]
-    .agg({'Value': ['mean', 'std']})
+gene_name_lists = [gene_name_list for gene_name_list in filepaths.gene_names_annotate_volcano_surprising[exp_key]['length'].values()] 
+gene_names = [gene for sublist in gene_name_lists for gene in sublist]
+#%%
+df_stats = dfs_stats[exp_key]
+df_annotate = df_stats.loc[
+    lambda df_: df_['grna', 'Gene'].isin(gene_names),
+].groupby(('grna', 'Gene')).first().reset_index()
+fig, axs = plt.subplots(1, 2, figsize=(8,4))
+steady_state_viz.show_volcano_plot(
+    df_stats = df_stats,
+    var=column_names['length'],
+    ax=axs[0],
+    df_annotate = df_annotate,
+    df_control_stats = dfs_controls_stats[exp_key],
+    subset_gene_list = filepaths.genes_divisome,
+    label_dict = long_label,
 )
+#%%
+fig, axs = plt.subplots(4, 2, figsize=(6,15))
+ax=axs[0,0]
+df = dfs_stats[exp_key]
+df_control_stats = dfs_controls_stats[exp_key]
+
+gene_name_lists = [gene_name_list for gene_name_list in filepaths.gene_names_annotate_volcano_surprising[exp_key]['length'].values()] 
+gene_names = [gene for sublist in gene_name_lists for gene in sublist]
+key = 'length'
+df_annotate = df.loc[
+    lambda df_: df_['grna', 'Gene'].isin(gene_names),
+].groupby(('grna', 'Gene')).first()
+steady_state_viz.show_volcano_plot(
+    df,
+    var=column_names['length'],
+    ax=ax,
+    df_annotate = df_annotate,
+    df_control_stats = df_control_stats,
+    subset_gene_list = filepaths.genes_divisome,
+)
+
+gene_name_lists = [gene_name_list for gene_name_list in filepaths.gene_names_annotate_volcano_surprising[exp_key]['growth_rate_fast'].values()] 
+gene_names = [gene for sublist in gene_name_lists for gene in sublist]
+df_annotate = df_stats.loc[
+    lambda df_: df_['grna', 'Gene'].isin(gene_names),
+].groupby(('grna', 'Gene')).first()
+
+ax=axs[1,0]
+steady_state_viz.show_volcano_plot(
+    df,
+    var=column_names['growth_rate'],
+    ax=ax,
+    df_annotate = df_annotate,
+    df_control_stats = df_control_stats,
+    subset_gene_list = filepaths.genes_segregation,
+)
+#%%
+key = 'width'
+df_annotate = df_stats.loc[
+    lambda df_: df_['opLAG1_id'].isin(indices_annotate_volcano[key]),
+]
+ax=axs[2,0]
+steady_state_viz.show_volcano_plot(
+    df,
+    var=column_names['width'],
+    ax=ax,
+    df_annotate = df_annotate,
+    df_control_stats = df_control_stats,
+    subset_gene_list = filepaths.genes_elongasome + filepaths.genes_cell_wall_precursors,
+)
+
+key = 'growth_rate'
+df_annotate = df_stats.loc[
+    lambda df_: df_['opLAG1_id'].isin(indices_annotate_volcano[key]),
+]
+ax=axs[3,0]
+steady_state_viz.show_volcano_plot(
+    df,
+    var=column_names['growth_rate'],
+    df_annotate = df_annotate,
+    ax=ax,
+    df_control_stats = df_control_stats,
+    # subset_gene_list = filepaths,
+)
+
 #%%
 ############################################################
 ## Figure 2
@@ -122,6 +337,10 @@ genes_segregation = filepaths.genes_segregation
 genes_min_system = filepaths.genes_min_system
 genes_nucleoid_occlusion = filepaths.genes_nucleoid_occlusion
 genes_fla_che = filepaths.genes_fla_che
+
+column_names = filepaths.column_names
+
+long_label = filepaths.long_labels
 
 dfs_controls = {key: df.loc[df['Category'] == 'control', :] for key, df in dfs.items()}
 dfs_subsets = {

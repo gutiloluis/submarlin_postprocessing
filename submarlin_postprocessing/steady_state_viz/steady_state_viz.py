@@ -2,6 +2,7 @@
 import dask.dataframe as dd
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 from adjustText import adjust_text
 
 ##############################
@@ -48,7 +49,9 @@ def pivot_pvalue_df(
     cols_grnas: list[str] = ['locus_tag', 'Gene',
                 'Category', 'N Observations'],
     values: list[str] = ['Value', 'P-Value', 'Corrected P-Value'],
-    remove_key: str = '(True)' # Keep only robust estimators
+    remove_key: str = '(True)', # Keep only robust estimators
+    filename_out: str = None,
+
 ) -> pd.DataFrame:
     """
     Pivot the steady state p-value DataFrame from the original format to a more usable format.
@@ -73,7 +76,24 @@ def pivot_pvalue_df(
         .set_index(index_name)
     )
     df_grna.columns = pd.MultiIndex.from_product([['grna'], df_grna.columns])
-    return df_output.merge(df_grna, on=index_name, how='left')
+    df_output = df_output.merge(df_grna, on=index_name, how='left')
+    if filename_out is not None:
+        df_output.to_pickle(filename_out)
+    return df_output
+
+# USAGE
+# dfs_stats = {key:
+#     pivot_pvalue_df(
+#         df=dfs_stats[key],
+#         index_name='opLAG1_id',
+#         cols_grnas=['locus_tag', 'Gene',
+#                     'Category', 'N Observations'],
+#         values=['Value', 'Corrected P-Value'],
+#         remove_key='(True)', # Keep only robust estimators
+#         filename_out=filepaths.steady_state_estimator_pvalues_pivoted_filenames[key],
+#     )
+#     for key in exp_groups
+# }
 
 def load_and_pivot_all_steady_state_dfs(
     cell_cycle_df_estimators_filename: str,
@@ -347,5 +367,70 @@ def bivariate_plot_with_subsets(
     )
     bivariate_plot(df=df_controls, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_controls, alpha=0.5, s=2, **kwargs)
 
-plt.style.use('steady_state.mplstyle')
+def show_volcano_plot(
+    df_stats: pd.DataFrame,
+    var: str,
+    ax,
+    df_annotate: pd.DataFrame,
+    df_control_stats = None,
+    subset_gene_list: list[str] = None,
+    label_dict: dict = None,
+    
+):
+    df_stats.plot(
+        x=('Value', var),
+        y=('nlog10pval', var),
+        kind='scatter', s=5, ax=ax, alpha=0.2, c = 'tab:blue',
+        # edgecolors=None,
+        # linewidth=0,
+        marker='o',
+    )
+
+    if subset_gene_list is not None:
+        df_stats.loc[lambda df_:df_['grna','Gene'].isin(subset_gene_list), :].plot(
+            x=('Value', var),
+            y=('nlog10pval', var),
+            kind='scatter', s=15, c='tab:green', ax=ax, alpha=0.5,
+            edgecolors='black',
+            linewidth=0.5,
+            marker='o'
+        )
+
+    df_stats.loc[lambda df_:df_['grna','Category']=='control', :].plot(
+        x=('Value', var),
+        y=('nlog10pval', var),
+        kind='scatter', s=8, c='tab:red', ax=ax, alpha=0.5,
+    )
+
+    texts = []
+    for _, row in df_annotate.iterrows():
+        texts.append(
+            ax.text(x=row['Value', var], y=row['nlog10pval', var], s=row['grna', 'Gene'],
+                ha='left', va='top', fontsize=10, color='black')
+        )
+    _= adjust_text(
+        texts,
+        arrowprops=dict(arrowstyle='-', color='black', lw=1.5),
+        ax=ax,
+        force_points=1,
+        force_text=1,
+        # force_pull=0.001,
+        min_arrow_len=1,
+        shrinkA=20,
+    )
+
+    ax.axhline(-np.log10(0.05), color='red', linestyle='--', linewidth=1)
+
+    if df_control_stats is not None:
+        ax.axvline(
+            df_control_stats.loc['mean+3std', var],
+            color='black', linestyle='--', linewidth=1
+        )
+        ax.axvline(
+            df_control_stats.loc['mean-3std', var],
+            color='black', linestyle='--', linewidth=1
+        )
+    ax.set_ylabel("$-\log_{10}($FDR$)$")
+    ax.set_xlabel(label_dict[var] if label_dict is not None else var)
+
 
