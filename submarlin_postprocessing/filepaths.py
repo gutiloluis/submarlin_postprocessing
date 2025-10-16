@@ -424,6 +424,106 @@ genes_known_prototypical = {
     }
 }
 
+indices_annotate_volcano = {
+    'lLAG08': {
+        'length': [1221, 287, 2111, 2138, 2304, 2292, 14, 2898, 37],
+        'sep_disp': [3264, 3619, 3643, 2564],
+        'width': [7358, 2244, 5581.0],
+        'growth_rate':[5200, 7099, 4581, 1107, 4183],
+    },
+    'lLAG10': {
+        'length': [4371, 173, 182, 209], # fliE, ctsR, clpC, rplK
+        #TODO: walJ
+    }
+}
+
+gene_names_annotate_volcano_surprising = {
+    'lLAG08': {
+        'length': {
+            'translation_elongation': [
+                'fusA', # Elong factor up of tufA
+            ],
+            'nucleotide_metabolism': [
+                'pyrG', # CTP synthase, very strong hit
+                'nrdE',
+                'tmk',
+                'folE',
+                'nrdI',
+                'nrdF',
+            ],
+            'trna': ['trnSL-Arg2', 'trnB-Met3', 'fmt', 'trnB-Gly2'],
+            'ribosome_rescue': ['smpB'], # tmRNA
+            'pH_homeostasis': ['mrpA', 'mrpB', 'mrpD', 'mrpC'], # MrpABCDEFG, cation antiporter, pH homeostasis
+            'cell_wall': ['yqiD'],
+            'amino_acid_synthesis':['lysA','glyA'],
+            'rnases': ['rny', 'rnpA', 'rnz'],
+            'unknown': ['yneF'] # Small effect size
+        },
+        'sep_disp': {
+            'cell_wall':['walK', 'walR'],
+            'extracellular': ['prsA'],
+            'aa_synthesis': ['glyA'], # Very clear. Only 2 gRNAs
+        },
+        'width': {
+            'respiration': ['yumC'], # very clear
+            'extracellular': ['prsA'],
+            'lipid_synthesis': ['ispD', 'ispE'],
+        },
+        'lenght_small': {
+            'iron': ['sufD', 'hemH', 'hemA', 'hemB', 'hemQ', 'hemL', 'hemC', 'hemE', 'hemD'],
+            'menaquinone': ['menD', 'menE', 'menB'],
+            'respiration': ['yumC'],
+            'lipid_synthesis': ['yqeG'],
+        },
+        'growth_rate_fast':{
+            'oxidative_stress': ['trxB'], # Catalase
+            'protease': ['clpP'],
+            'cell_envelope': ['murAA', 'racE', 'murC', 'murB'],
+            'nucleotide_synthesis': ['purH', 'purS'],
+        },
+        'growth_rate': {
+            'cell_wall': ['ykuQ', 'ykuR'],###########
+        }
+    },
+    'lLAG10': {
+        'length': {
+            'heat_shock': ['ctsR', 'clpC'],
+            'translation': ['defA'], # Also oxidative stress. KD leads to more sensitivity to it.
+            'nucleotide_metabolism': ['thiC', 'yncF'],
+            'sporulation': ['spo0A'],
+            'TA_system': ['yfjC', 'yfjB'],
+            'uncharacterized': ['BSU_17679'], # Prob through thyA
+            'thryptophan': ['trpP'],
+            'unknown':
+                ['ylxX', # Operon with divIB, upstream of ftsAZ, right upstream of sbp
+                'ykuS', # Unknown, membrane protein(?), monocistronic
+                'yabR', # Downstream of divIC, bulging
+                ],
+            'stress': ['rsiW', 'rsbW'],
+        },
+        'sep_disp': {
+            'cell_wall': ['walH'],
+        },
+        'length_small': {
+            'iron': ['hemX'],
+            'menaquinone': ['menH', 'menF'],
+            'respiration': ['qoxC', 'qoxD', 'qoxB'],
+        },
+        'growth_rate_fast': {
+            'two_component': ['walI', 'walJ'],
+            'unknown': ['yjnA'],
+            'sporulation': ['spo0A'],
+        },
+        'growth_rate': {
+            'related_before': ['ccpN'],
+            'unknown': ['ylnD', 'ykuS', 'ylxP'],
+            'bicarbonate_transport': ['nhdF', 'ybcC'],
+            'ribosome_maturation': ['yqxC'],
+            'menoquinone': ['menF'],
+        },
+    }
+}
+
 indices_last_t = {
     'lLAG08': {
         'rplQ': {
@@ -434,7 +534,7 @@ indices_last_t = {
         },
         'ftsW': {
             2111: [516853, 300165910, 300103878, 137050, 300310990, 300539796]
-        }
+        },
         'ftsL': {
             2138: [492968, 196360, 192650, 359776],
         },
@@ -451,6 +551,22 @@ indices_last_t = {
         'dnaN': {
             37: [300105644, 19165, 452327, 300138663],
         },
+        
+        'parE': {
+            3264: [610341, 326901, 196563, 300237992, 258808, 525051]
+        },
+        'scpB': {
+            3619: [129497, 190122, 151141, 177321]
+        },
+
+        'alaT': {
+            7358: [23431, 358761, 450900, 517389, 542424, 300016502],
+        },
+
+        'eno': {
+            5200: [127422, 537736, 92158, 129547],
+        }
+        
     },
 
     'lLAG10': {
