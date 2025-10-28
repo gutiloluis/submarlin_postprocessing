@@ -24,6 +24,7 @@ dependencies = [
     "anndata",
     "scanpy",
     "adjustText",
+    "matplotlib-scalebar",
 ]
 dynamic = ["version"]
 
