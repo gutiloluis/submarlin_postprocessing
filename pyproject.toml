@@ -25,6 +25,7 @@ dependencies = [
     "scanpy",
     "adjustText",
     "matplotlib-scalebar",
+    "scikit-image",
 ]
 dynamic = ["version"]
 
