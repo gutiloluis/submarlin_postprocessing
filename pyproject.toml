@@ -26,6 +26,8 @@ dependencies = [
     "adjustText",
     "matplotlib-scalebar",
     "scikit-image",
+    "goatools",
+    "tables",
 ]
 dynamic = ["version"]
 

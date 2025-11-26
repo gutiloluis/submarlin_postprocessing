@@ -230,22 +230,22 @@ def show_all_histograms(
     dfs: dict[str, pd.DataFrame],
     label_dict: dict,
 ):
-    fig, axs= plt.subplots(1, 2, figsize=(6, 3))
+    fig, axs= plt.subplots(1, 2, figsize=(3, 1.5))
     show_n_observations_histogram(df=dfs['lLAG08'], title='Essentials', ax=axs[0], color='C0')
     show_n_observations_histogram(df=dfs['lLAG10'], title='Non-Essentials', ax=axs[1], color='C1')
     fig.tight_layout()
 
-    fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
+    fig, axs = plt.subplots(1, 2, figsize=(3, 1.5), sharex=True)
     show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Length', label_dict=label_dict, title='Essentials', ax=axs[0], color='C0')
     show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Length', label_dict=label_dict, title='Non-Essentials', ax=axs[1], color='C1')
     fig.tight_layout()
 
-    fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
+    fig, axs = plt.subplots(1, 2, figsize=(3, 1.5), sharex=True)
     show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Width', label_dict=label_dict, title='Essentials', ax=axs[0], color='C0')
     show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Width', label_dict=label_dict, title='Non-Essentials', ax=axs[1], color='C1')
     fig.tight_layout()
 
-    fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
+    fig, axs = plt.subplots(1, 2, figsize=(3, 1.5), sharex=True)
     show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Instantaneous Growth Rate: Volume', label_dict=label_dict, title='Essentials', ax=axs[0], color='C0')
     show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Instantaneous Growth Rate: Volume', label_dict=label_dict, title='Non-Essentials', ax=axs[1], color='C1')
     fig.tight_layout()

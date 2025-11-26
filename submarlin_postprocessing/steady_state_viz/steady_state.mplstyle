@@ -5,10 +5,10 @@
 
 # Font settings for better readability from a distance
 font.size : 6
-axes.titlesize : 9
-axes.labelsize : 9
-xtick.labelsize : 8
-ytick.labelsize : 8
+axes.titlesize : 7
+axes.labelsize : 7
+xtick.labelsize : 7
+ytick.labelsize : 7
 legend.fontsize : 5
 font.family : sans-serif
 font.sans-serif : Arial, Helvetica, DejaVu Sans, Bitstream Vera Sans, sans-serif

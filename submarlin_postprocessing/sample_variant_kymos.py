@@ -2,8 +2,19 @@ from pathlib import Path
 import re
 import h5py
 import matplotlib.pyplot as plt
+from matplotlib_scalebar.scalebar import ScaleBar
 import numpy as np
 import pandas as pd
+import submarlin_postprocessing.filepaths as filepaths
+
+
+############################################################
+## Functions for handling hdf5 files (FOVs) and metadata
+############################################################
+
+
+
+
 ############################################################
 ## Functions for verifying kymograph files
 ############################################################
@@ -163,12 +174,141 @@ def parse_metadata_row(
     file_trench_idx = metadata_row['File Trench Index']
     return experiment_key, file_idx, file_trench_idx
 
+def get_example_barcodes_fov_fragment():
+    exp_key = 'lLAG08_9'
+    fov_file_number = 122
+    fov_key='Cy5'
+
+    x0 = 1000+400+15
+    x1 = x0 + 55
+    y0 = 1550
+    y1 = 1690
+
+    vmin=4500
+    vmax=13000
+
+    scale_kwargs = {
+        'fixed_value': 5,
+        'width_fraction': 0.04,
+        'location': 'lower right',
+        'color': 'white',
+        'scale_loc': 'none',
+        'border_pad': 1,
+        # 'scale_linewidth': 5,
+        # 'font_properties': {'size': 10, 'weight': 'bold', 'family': 'sans-serif'},
+    }
+
+    timepoints = [3,4,5]
+
+    fov_headpath = filepaths.barcode_fov_paths[exp_key]
+    with h5py.File(fov_headpath / f'hdf5_{fov_file_number}.hdf5', 'r') as f:
+        imgs = f[fov_key][timepoints, y0:y1, x0:x1]
+
+    def show_and_save_single_frame(i, show_scale=False):
+        fig, ax = plt.subplots(figsize=(4,8))
+        ax.imshow(imgs[i], cmap='gray', vmin=vmin, vmax=vmax)
+        ax.axis('off')
+
+        if show_scale:
+            scalebar = ScaleBar(
+                dx=filepaths.MICRONS_PER_PIXEL,
+                units="um",
+                frameon=False, # No box behind scalebar
+                **scale_kwargs,
+            )
+            ax.add_artist(scalebar)
+
+        plt.savefig(
+            filepaths.headpath / 'bmarlin_manuscript' / f'example_barcodes_fov_fragment_t-{i}.png',
+            transparent=True,
+            bbox_inches='tight',
+            pad_inches=0,
+            dpi=500
+        )
+
+    for i in range(len(timepoints)):
+        show_and_save_single_frame(i, show_scale=True)
+
+def show_example_phenotyping_fov_fragment():
+    exp_key = 'lLAG08_9'
+    fov_file_number = 120
+    fov_key='mCherry'
+
+    x0 = 1635
+    x1 = 1835
+    y0 = 1555
+    y1 = 1710
+
+    vmin=450
+    vmax=1500
+
+    scale_kwargs = {
+        'fixed_value': 5,
+        'width_fraction': 0.04,
+        'location': 'lower left',
+        'color': 'white',
+        'scale_loc': 'none',
+        'border_pad': 1,
+        # 'scale_linewidth': 5,
+        'font_properties': {'size': 12, 'weight': 'bold', 'family': 'sans-serif'},
+    }
+
+    fov_headpath = filepaths.fov_paths[exp_key]
+    with h5py.File(fov_headpath / f'hdf5_{fov_file_number}.hdf5', 'r') as f:
+        img = f[fov_key][0, y0:y1, x0:x1]
+
+    
+    fig, ax = plt.subplots(figsize=(4,8))
+    ax.imshow(img, cmap='gray', vmin=vmin, vmax=vmax)
+    ax.axis('off')
+
+    
+    scalebar = ScaleBar(
+        dx=filepaths.MICRONS_PER_PIXEL,
+        units="um",
+        frameon=False, # No box behind scalebar
+        **scale_kwargs,
+    )
+    ax.add_artist(scalebar)
+
+    plt.savefig(
+        filepaths.headpath / 'bmarlin_manuscript' / f'example_phenotyping_fov_fragment.png',
+        transparent=True,
+        bbox_inches='tight',
+        pad_inches=0,
+        dpi=500
+    )
+    
+    # # Draw a rectangle across the whole height
+    # x0_rect = 183
+    # x1_rect = img.shape[1]-2
+    # y0_rect = 0
+    # y1_rect = img.shape[0]-1
+    # rect = plt.Rectangle(
+    #     (x0_rect, y0_rect),
+    #     x1_rect - x0_rect,
+    #     y1_rect - y0_rect,
+    #     linewidth=2,
+    #     edgecolor='tab:orange',
+    #     facecolor='none'
+    # )
+    # ax.add_patch(rect)
+
 def show_single_kymo(
     experiment_key: str,
     file_idx: int,
     file_trench_idx: int,
     kymograph_paths: dict[str, Path],
-    every_n_frames: int = 1
+    flip_vertically: bool = False,
+    initial_frame: int = 0,
+    final_frame: int = -1,
+    every_n_frames: int = 1,
+    border_trim_x: int = 0,
+    filename_prefix: str = 'kymograph_',
+    key: str = 'mCherry',
+    cmap: str = 'gray',
+    scale_kwargs={},
+    savepath: Path | None = None,
 ):
     """
     Show a single kymograph given experiment key, file index, and file trench index.
@@ -176,21 +316,48 @@ def show_single_kymo(
     kymo = load_array_from_hdf5(
         file_idx=file_idx,
         headpath=kymograph_paths[experiment_key],
-        prefix='kymograph_',
-        key='mCherry'
-    )[file_trench_idx][::every_n_frames,:,:]
+        prefix=filename_prefix,
+        key=key
+    )[file_trench_idx][initial_frame:final_frame:every_n_frames,:,border_trim_x:-border_trim_x]
+
+    if flip_vertically:
+        kymo = np.fliplr(kymo)
 
     print(f"experiment number, file index, file trench index")
     print(f"{experiment_key}, {file_idx}, {file_trench_idx}")
-    plt.figure(figsize=(15, 5))
-    plt.imshow(unfold_kymograph(kymo), cmap='gray')
-    plt.axis('off')
+    fig, ax = plt.subplots(figsize=(15, 5))
+    ax.imshow(unfold_kymograph(kymo), cmap=cmap)
+    ax.axis('off')
+
+    scalebar = ScaleBar(
+        dx=0.211903923790586,
+        units="um",
+        # fixed_value=5,
+        frameon=False, # No box behind scalebar
+        # label_loc = 'left',
+        # box_alpha=0,
+        # rotation="vertical-only",
+        # color='white',
+        **scale_kwargs,
+    )
+    ax.add_artist(scalebar)
+
+    if savepath is not None:
+        plt.savefig(savepath, transparent=True, bbox_inches='tight', pad_inches=0, dpi=500)
+
+    return fig, ax
 
 def show_single_kymo_df_index(
     metadata: pd.DataFrame,
     index: int,
     kymograph_paths: dict[str, Path],
     key_experiment_numbers_after_merge_to_key: dict[int, str],
+    flip_vertically: bool = False,
+    every_n_frames: int = 1,
+    filename_prefix: str = 'kymograph_', # kymograph_
+    key: str = 'mCherry',
+    cmap: str = 'gray',
+    scale_kwargs={},
 ):
     """
     Show a single kymograph given the index of the metadata DataFrame.
@@ -203,12 +370,17 @@ def show_single_kymo_df_index(
     )
     print(f"index_df")
     print(f"{index}")
-    show_single_kymo(
+    return show_single_kymo(
         experiment_key=experiment_key,
         file_idx=file_idx,
         file_trench_idx=file_trench_idx,
         kymograph_paths=kymograph_paths,
-        every_n_frames=1
+        flip_vertically=flip_vertically,
+        every_n_frames=every_n_frames,
+        filename_prefix=filename_prefix,
+        key=key,
+        cmap=cmap,
+        scale_kwargs=scale_kwargs
     )
 
 def show_single_kymo_iloc(
@@ -229,7 +401,7 @@ def show_single_kymo_iloc(
 
     print(f"iloc, index_df, variant_id, gene")
     print(f"{idx}, {metadata_trench.name}, {metadata_trench['opLAG1_id']}, {metadata_trench['Gene']}")
-    show_single_kymo(
+    return show_single_kymo(
         experiment_key=experiment_key,
         file_idx=file_idx,
         file_trench_idx=file_trench_idx,

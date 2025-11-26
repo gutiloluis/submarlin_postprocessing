@@ -1,14 +1,28 @@
 #%%
 from pathlib import Path
 import pandas as pd
-headpath = Path("/home/lag36/scratch/lag36/")
 
+########################
+# Imaging parameters
+########################
+MICRONS_PER_PIXEL = 0.211903923790586 # um/pixel # 20X, Ti5
+########################
+
+########################
 # Individual experiment paths
 # Experiment paths
+########################
+headpath = Path("/home/lag36/scratch/lag36/")
 
 ## Notebook 1
+filename_fov_metadata = Path('Growth_Division/metadata.hdf5')
+suffix_fovs = Path('Growth_Division/hdf5')
+suffix_barcode_fovs = Path('Barcodes/hdf5')
 suffix_kymographs = Path('Growth_Division/kymograph')
+suffix_kymograph_metadata = suffix_kymographs / 'metadata'
+suffix_barcode_kymographs = Path('Barcodes/kymograph')
 suffix_segmentation = Path('Growth_Division/fluorsegmentation')
+suffix_lineage = Path('Growth_Division/lineage')
 
 headpaths = {
     'lLAG08_1': headpath / '2024-08-16_lLAG8_Run-1_Pipeline-Run-2-2025-05-14',
@@ -17,9 +31,31 @@ headpaths = {
     'lLAG08_9': headpath / '2025-03-26_lLAG8-MBM-37C-Run-09_3-Fids_Auto-Switch',
 }
 
+fov_metadata_paths = {
+    key: headpaths[key] / filename_fov_metadata
+    for key in headpaths.keys()}
+
+fov_paths = {
+    key: headpaths[key] / suffix_fovs
+    for key in headpaths.keys()}
+
+barcode_fov_paths = {
+    key: headpaths[key] / suffix_barcode_fovs
+    for key in headpaths.keys()} 
+
 kymograph_paths = {
     key: headpaths[key] / suffix_kymographs
     for key in headpaths.keys()}
+
+kymograph_metadata_paths = {
+    key: headpaths[key] / suffix_kymograph_metadata
+    for key in headpaths.keys()
+}
+
+barcode_kymograph_paths = {
+    key: headpaths[key] / suffix_barcode_kymographs
+    for key in headpaths.keys()
+}
 
 segmentation_paths = {
     key: headpaths[key] / suffix_segmentation
@@ -62,7 +98,7 @@ final_barcode_df_filenames = {
     for key in growth_parquet_prefixes.keys()
 }
 
-lineage_cell_cycle_df_filenames = {
+lineage_cell_cycle_filenames = {
     key: headpath_growth_parquet_files / (growth_parquet_prefixes[key] + '_Lineage_Cell_Cycle')
     for key in growth_parquet_prefixes.keys()
 }
@@ -83,11 +119,13 @@ headpaths_merged = {
     'lLAG10': headpath / '2025-06-03_lLAG8-10_Merged-Analysis' / '2025-06-04_lLAG10_ExpNum-Fixed',
     'lDE20_pre': headpath / 'Ecoli/2023-01-18_lDE20_Merged_Analysis',
     'lDE20': headpath / 'Ecoli/Eaton_2025_Data/lDE20_Imaging/Clustering',
+    'merged_all': headpath / '2025-10-17_lLAG8-10_Merged',
 }
 
 experiments_merged = {
     'lLAG08': ['lLAG08_1', 'lLAG08_9'],
     'lLAG10': ['lLAG10_2'], 
+    'merged_all': ['lLAG08_1', 'lLAG10_2', 'lLAG08_9'],
     'lDE20': None,
 }
 
@@ -109,90 +147,111 @@ experiment_numbers_after_merge_to_key = {
 final_barcodes_df_merged_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Final_Barcodes_df_Merged',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Final_Barcodes_df_Merged',
+    'merged_all': headpaths_merged['merged_all'] / 'Final_Barcodes_df_Merged',
 }
 
 final_barcodes_df_condensed_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / 'lLAG8_Final_Barcode_df_First-Timepoint.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / 'lLAG10_Final_Barcode_df_First-Timepoint.pkl',
+    #TODO 'merged_all':
 }
 
-lineage_cell_cycle_df_merged_filenames = {
+lineage_cell_cycle_merged_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Lineage_Cell_Cycle_Merged',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Lineage_Cell_Cycle_Merged',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Cell_Cycle_Merged',
 }
 
 lineage_growth_observations_merged_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Lineage_Growth_Observations_Merged',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Lineage_Growth_Observations_Merged',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Growth_Observations_Merged',
 }
 
 lineage_observations_merged_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Lineage_Observations_Merged',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Lineage_Observations_Merged',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Observations_Merged',
 }
 ## Notebook 6
 # Kernel regression df
 kernel_regression_df_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-08-11_lLAG8_Kernel_Regression_df',
     'lLAG10': None, # TODO
+    'merged_all': headpaths_merged['merged_all'] / 'Kernel_Regression_df',
 }
 # Yeo-Johnson transform
 kernel_regression_transform_df_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-08-11_lLAG8_Kernel_Regression_Transform_df',
-    'lLAG10': None # TODO
+    'lLAG10': None, # TODO
+    'merged_all': headpaths_merged['merged_all'] / 'Kernel_Regression_Transform_df',
 }
 # Aggregated sgRNA_Timeseries
 sgRNA_timeseries_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-08-11_sgRNA_Timeseries_df.pkl',
     'lLAG10': None, # TODO
     'lDE20_pre': headpaths_merged['lDE20_pre'] / '2023-01-23_sgRNA_Timeseries_df.pkl',
-    'lDE20': headpaths_merged['lDE20'] / '2023-01-23_sgRNA_Timeseries_df.pkl'
+    'lDE20': headpaths_merged['lDE20'] / '2023-01-23_sgRNA_Timeseries_df.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'sgRNA_Timeseries_df.pkl',
 }
 
 # jacknife
 jacknife_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / 'jackknife_df.pkl',
-    'lLAG10': None # TODO
+    'lLAG10': None, # TODO
+    'merged_all': headpaths_merged['merged_all'] / 'jackknife_df.pkl',
 }
+
 jacknife_temp_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / 'jackknife_df_temp.pkl',
-    'lLAG10': None # TODO
+    'lLAG10': None, # TODO
+    'merged_all': headpaths_merged['merged_all'] / 'jackknife_df_temp.pkl',
 }
-# Preinduction aggregation
+# Preinduction aggregation # TODO: lLAG8 is wrong! These are the ones from nb 8!!
 preinduction_cell_cycle_df_filenames = {
-    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Preinduction_Cell_Cycle_df',
+    # 'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Preinduction_Cell_Cycle_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Cell_Cycle_Timeseries_Preinduction',
 }
 preinduction_growth_df_filenames = {
-    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Preinduction_Growth_df',
+    # 'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Preinduction_Growth_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Growth_Timeseries_Preinduction',
 }
 preinduction_timepoints_df_filenames = {
-    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Preinduction_Timepoints_df',
+    # 'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Preinduction_Timepoints_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Timepoints_Timeseries_Preinduction',
 }
 preinduction_cell_cycle_mean_cv_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-08-11_lLAG8_Lineage_Cell_Cycle_Timeseries_Preinduction_MeanCV.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Cell_Cycle_Timeseries_Preinduction_MeanCV.pkl',
 }
 # Steady state aggregation
-steady_state_cell_cycle_df_filenames = {
-    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Cell_Cycle_df',
+steady_state_cell_cycle_df_nb_6_filenames = {
+    # 'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Cell_Cycle_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Cell_Cycle_Timeseries_Steady_State',
 }
-steady_state_growth_df_filenames = {
-    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Growth_df',
+steady_state_growth_df_nb_6_filenames = {
+    # 'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Growth_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Growth_Timeseries_Steady_State',
 }
-steady_state_timepoints_df_filenames = {
-    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Timepoints_df',
+steady_state_timepoints_df_nb_6_filenames = {
+    # 'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Timepoints_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Timepoints_Timeseries_Steady_State',
 }
 steady_state_cell_cycle_mean_cv_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-08-11_lLAG8_Lineage_Cell_Cycle_Timeseries_SteadyState_MeanCV.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'Lineage_Cell_Cycle_Timeseries_Steady_State_MeanCV.pkl',
 }
 
 ## Notebook 7 - Clustering
 library_design_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / 'df_ess_to_order_all.pkl',
-    'lLAG10': None # TODO
+    'lLAG10': None, # TODO
+    'merged_all': headpaths_merged['merged_all'] / 'experimentwise_lineage/df_combined_ess_noness_to_order.pkl',
 }
 nanopore_filenames_group = { # Dynamic path
     'lLAG08': nanopore_filenames[experiments_merged['lLAG08'][0]],
     'lLAG10': nanopore_filenames[experiments_merged['lLAG10'][0]],
+    'merged_all': 'experimentwise_lineage/2025-10-20_lLAG8-10_final_df_merged-sgRNAs-no-fiducials_with-index.tsv', # TODO
 }
 
 #... TODO
@@ -203,6 +262,7 @@ prefixes_clustering_df ={
     'lLAG10': None, # TODO
     'lDE20_pre': 'Z_Score_Thr_1.25_N_Neighbors_10',
     'lDE20': '',
+    'merged_all': '2025-10-20_12Hour_Analysis/Z_Score_Thr_1.25_N_Neighbors_10',
 
 } 
 clustering_df_large = {
@@ -210,6 +270,7 @@ clustering_df_large = {
     'lLAG10': None, # TODO
     'lDE20_pre': headpaths_merged['lDE20_pre'] / prefixes_clustering_df['lDE20_pre'] / 'Pandas_Dataframe.pkl',
     'lDE20': headpaths_merged['lDE20'] / prefixes_clustering_df['lDE20'] / 'Pandas_Dataframe.pkl',
+    'merged_all': headpaths_merged['merged_all'] / prefixes_clustering_df['merged_all'] / 'Pandas_Dataframe.pkl',
 }
 
 # anndata
@@ -218,32 +279,72 @@ anndata_nonRcompat = {
     'lLAG10': None, # TODO,
     'lDE20_pre': headpaths_merged['lDE20_pre'] / prefixes_clustering_df['lDE20_pre'] / 'AnnData_nonRcompat.h5ad',
     'lDE20': headpaths_merged['lDE20'] / prefixes_clustering_df['lDE20'] / 'AnnData_nonRcompat.h5ad',
+    'merged_all': headpaths_merged['merged_all'] / prefixes_clustering_df['merged_all'] / 'AnnData_nonRcompat.h5ad',
 }
 
+#############
 ## Notebook 8
+#############
+
+# Steady state and preinduction dataframes (full dask dataframes)
+steady_state_cell_cycle_df_nb_8_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Cell_Cycle_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_Cell_Cycle_df',
+}
+steady_state_timepoints_df_nb_8_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Timepoints_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_Timepoints_df',
+}
+steady_state_growth_df_nb_8_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Growth_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_Growth_df',
+}
+preinduction_cell_cycle_df_nb_8_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Preinduction_Cell_Cycle_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Preinduction_Cell_Cycle_df',
+}
+preinduction_timepoints_df_nb_8_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Preinduction_Timepoints_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Preinduction_Timepoints_df',
+}
+preinduction_growth_df_nb_8_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Preinduction_Growth_df',
+    'merged_all': headpaths_merged['merged_all'] / 'Preinduction_Growth_df',
+}
+
+# Steady state estimators and trench estimators (pandas dataframes)
 steady_state_cell_cycle_df_estimators_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Cell_Cycle_df_Estimators.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Cell_Cycle_df_Estimators.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_Cell_Cycle_df_Estimators.pkl',
 }
 steady_state_cell_cycle_df_trench_estimators_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Cell_Cycle_df_Trench_Estimators.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Cell_Cycle_df_Trench_Estimators.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_Cell_Cycle_df_Trench_Estimators.pkl',
 }
-
 steady_state_growth_df_estimators_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Growth_df_Estimators.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Growth_df_Estimators.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_Growth_df_Estimators.pkl',
 }
 steady_state_growth_df_trench_estimators_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Growth_df_Trench_Estimators.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Growth_df_Trench_Estimators.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_Growth_df_Trench_Estimators.pkl',
 } 
-
 steady_state_timepoints_df_estimators_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Timepoints_df_Estimators.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Timepoints_df_Estimators.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_Timepoints_df_Estimators.pkl',
+}
+steady_state_timepoints_df_trench_estimators_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Timepoints_df_Trench_Estimators.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Timepoints_df_Trench_Estimators.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_Timepoints_df_Trench_Estimators.pkl',
 }
 
+# df_bar_per_trench (made by Luis as quick reference for barcodes)
 df_bar_per_trench_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_df_bar_per_trench.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_df_bar_per_trench.pkl',
@@ -268,6 +369,32 @@ control_stats_filenames = {
 steady_state_estimator_pvalues_pivoted_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / 'lLAG8_Steady_State_df_Estimators_wStats_Pivoted.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / 'lLAG10_Steady_State_df_Estimators_wStats_Pivoted.pkl',
+}
+
+# slopes
+steady_state_slopes_filenames = {
+    'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Growth_Length_Regressions.pkl',
+    'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Growth_Length_Regressions.pkl',
+}
+########################
+# Examples for visualization
+########################
+headpath_examples = {
+    'merged_all': headpaths_merged['merged_all'] / 'examples'
+}
+
+
+##### 2025-10-28: This is Multi-Experiment trenchid # 492968, a divIC lineage
+# of good quality, used to introduce the variables measured.
+fig_02_variables_measured_divic = {
+    'merged_all': headpath_examples['merged_all'] / 'fig-02_variables_measured_divic'
+}
+filenames_fig_02_variables_measured_divic = {
+    'merged_all': {
+        'cyc': fig_02_variables_measured_divic['merged_all'] / 'lineage_cell_cycle_index.pkl',
+        'obs': fig_02_variables_measured_divic['merged_all'] / 'lineage_observations_merged_index.pkl',
+        'bar': fig_02_variables_measured_divic['merged_all'] / 'barcode_df_merged_index.pkl'
+    }
 }
 
 ##############################################

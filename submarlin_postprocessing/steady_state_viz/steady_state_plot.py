@@ -320,6 +320,11 @@ steady_state_viz.show_volcano_plot(
 ## Figure 2
 ############################################################
 #%% Histograms
+%load_ext autoreload
+%autoreload 2
+import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
+plt.style.use('steady_state.mplstyle')
+long_label = filepaths.long_labels
 steady_state_viz.show_all_histograms(dfs, label_dict=long_label)
 #%% Mismatch plots
 steady_state_viz.plot_mismatch_panels_multiple_genes(dfs, label_dict=long_label, color=None)
