@@ -6,3 +6,7 @@
 
 # __pycache__ directories
 __pycache__/
+
+# Ignore GO files
+*.goa
+*.obo

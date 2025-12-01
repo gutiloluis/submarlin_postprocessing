@@ -704,7 +704,7 @@ def show_example_kymo_for_variables(
     )
     linewidth = 1
     linestyle = '--'
-    fig, ax = plt.subplots(figsize=(15, 5))
+    fig, ax = plt.subplots(figsize=(6.62, 1.95))
     ax.imshow(unfold_kymograph(images_mch), cmap='gray')
     for contour in contours:
         ax.plot(contour[:, 1], contour[:, 0], linewidth=linewidth, color='red', linestyle=linestyle)
@@ -722,11 +722,38 @@ def show_example_kymo_for_variables(
     for contour in contours_d2:
         ax.plot(contour[:, 1], contour[:, 0], linewidth=linewidth, color='green', linestyle=linestyle)
     ax.axis('off')
+    ax.set_xlim(115, 680)
 
+    scale_kwargs = {
+        'fixed_value': 5,
+        'width_fraction': 0.04,
+        'location': 'lower right',
+        'color': 'white',
+        'scale_loc': 'none',
+        'border_pad': 0.2,
+        # 'scale_linewidth': 5,
+        'font_properties': {'size': 12, 'weight': 'bold', 'family': 'sans-serif'},
+    }
+
+    scalebar = ScaleBar(
+        dx=filepaths.MICRONS_PER_PIXEL,
+        units="um",
+        frameon=False, # No box behind scalebar
+        **scale_kwargs,
+    )
+    ax.add_artist(scalebar)
+
+    plt.savefig(
+        filepaths.headpath / 'bmarlin_manuscript' / 'example_kymo_variables_measured_divic.png',
+        transparent=True,
+        bbox_inches='tight',
+        pad_inches=0,
+        dpi=500
+    )
     #%% Inner part
-    linewidth = 4
+    linewidth = 1
     linestyle = '--'
-    fig, ax = plt.subplots(figsize=(15, 5))
+    fig, ax = plt.subplots(figsize=(0.68, 0.9))
     ax.imshow(unfold_kymograph(images_mch), cmap='gray')
     for contour in contours:
         ax.plot(contour[:, 1], contour[:, 0], linewidth=linewidth, color='red', linestyle=linestyle)
@@ -746,7 +773,14 @@ def show_example_kymo_for_variables(
 
     ax.set_xlim(352, 394)
     ax.set_ylim(70, 15)
-        
+    ax.axis('off')
+    plt.savefig(
+        filepaths.headpath / 'bmarlin_manuscript' / 'example_kymo_variables_measured_divic_inset.png',
+        transparent=True,
+        bbox_inches='tight',
+        pad_inches=0,
+        dpi=500
+    )
 
 
 

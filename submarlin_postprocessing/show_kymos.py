@@ -21,7 +21,6 @@ sample_variant_kymos.find_kymo_file_from_fov_position()
 #%%
 sample_variant_kymos.show_example_phenotyping_kymo()
 ##################
-
 #%% 
 exp_groups = ['lLAG08', 'lLAG10']
 metadata_dfs = sample_variant_kymos.load_metadata_dfs(
