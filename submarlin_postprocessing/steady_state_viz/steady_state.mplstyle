@@ -1,15 +1,15 @@
 # Figure size and DPI for a high-resolution slide
 #figure.figsize : 16, 8
-#figure.dpi : 100
-#savefig.dpi : 300
+figure.dpi : 100
+savefig.dpi : 500
 
 # Font settings for better readability from a distance
-font.size : 6
+font.size : 7
 axes.titlesize : 7
 axes.labelsize : 7
-xtick.labelsize : 7
-ytick.labelsize : 7
-legend.fontsize : 5
+xtick.labelsize : 6
+ytick.labelsize : 6
+legend.fontsize : 7
 font.family : sans-serif
 font.sans-serif : Arial, Helvetica, DejaVu Sans, Bitstream Vera Sans, sans-serif
 
@@ -28,13 +28,34 @@ axes.spines.bottom : True
 #ytick.labelleft : False
 
 # Line and marker properties
-axes.linewidth: 1
-lines.linewidth : 3.0
+axes.linewidth: 0.5
+lines.linewidth : 1.0
 lines.markersize : 3
-patch.linewidth : 1
+patch.linewidth : 0.5
 
 # Set the line width for the major ticks on the x-axis
-xtick.major.width: 1
+xtick.major.width: 0.5
 
 # Set the line width for the major ticks on the y-axis
-ytick.major.width: 1
+ytick.major.width: 0.5
+
+# 1. Force editable text (Type 42)
+pdf.fonttype: 42
+ps.fonttype: 42
+
+# To influence the behavior of tight_layout:
+figure.subplot.wspace: 0.05   # Equivalent to w_pad=0.05
+figure.subplot.hspace: 0.5    # Equivalent to h_pad=0.5
+
+# Note: 'both' (axis) and 'both' (which) is handled by specifying both major and minor keys.
+xtick.major.pad: 1            # Padding for major x-ticks
+ytick.major.pad: 1            # Padding for major y-ticks
+xtick.minor.pad: 1            # Padding for minor x-ticks
+ytick.minor.pad: 1            # Padding for minor y-ticks
+
+# --- AXIS LABEL PADDING (Corresponds to labelpad) ---
+# Sets the distance between the axis label and the tick labels.
+# Value is in points (pt). Setting it to 0 pt removes padding.
+axes.labelpad: 0.0          # DEPRECATED/OLD way, but good to know
+#xlabel.padding: 0.0         # Set padding for the X-axis label
+#ylabel.padding: 0.0         # Set padding for the Y-axis label

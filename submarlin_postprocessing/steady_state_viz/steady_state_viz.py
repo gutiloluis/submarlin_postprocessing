@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from adjustText import adjust_text
+import submarlin_postprocessing.filepaths as filepaths
 
 ##############################
 ## Functions for processing steady state DataFrames
@@ -210,7 +211,7 @@ def show_variable_histogram(
         variable: str,
         label_dict: dict,
         ax: plt.Axes,
-        title: str,
+        title: str = None,
         color: str = None,
     ) -> None:
     """
@@ -219,13 +220,15 @@ def show_variable_histogram(
     variable: Variable to plot.
     """
     _ = ax.hist(df[variable], bins=30, histtype='step', color=color, log=True)
-    ax.set_xlabel(label_dict[variable])
-    ax.set_ylabel('# Gene Targets')
-    ax.set_title(title)
+    ax.set_xlabel(label_dict[variable], labelpad=0)
+    ax.set_ylabel('# sgRNAs', labelpad=0)
+    if title is not None:
+        ax.set_title(title)
 
     df_controls = df.loc[df['Category'] == 'control', variable]
     _ = ax.hist(df_controls, bins=30, histtype='step', color='black', label='Controls', log=True)
-
+    ax.tick_params(axis='both', which='both', pad=1)
+    
 def show_all_histograms(
     dfs: dict[str, pd.DataFrame],
     label_dict: dict,
@@ -249,6 +252,37 @@ def show_all_histograms(
     show_variable_histogram(df=dfs['lLAG08'], variable='Mean (Robust)_Instantaneous Growth Rate: Volume', label_dict=label_dict, title='Essentials', ax=axs[0], color='C0')
     show_variable_histogram(df=dfs['lLAG10'], variable='Mean (Robust)_Instantaneous Growth Rate: Volume', label_dict=label_dict, title='Non-Essentials', ax=axs[1], color='C1')
     fig.tight_layout()
+
+def show_all_variables_histograms(
+        dfs: dict[str, pd.DataFrame],
+        label_dict: dict,
+        save_figure: bool = False,
+        filename: str = filepaths.headpath / 'bmarlin_manuscript/figure_2/histograms_variables.png'
+):
+    fig, axs = plt.subplots(2, 2, figsize=(2.15, 2.15), sharex=False, sharey=False)
+    show_variable_histogram(
+        df=dfs['lLAG08'], variable='Mean (Robust)_Length',
+        label_dict=label_dict, ax=axs[0,0], color='C0')
+    show_variable_histogram(
+        df=dfs['lLAG10'], variable='Mean (Robust)_Length',
+        label_dict=label_dict, ax=axs[0,1], color='C1')
+    axs[0,1].sharex(axs[0,0])
+
+    show_variable_histogram(
+        df=dfs['lLAG08'], variable='Mean (Robust)_Width',
+        label_dict=label_dict, ax=axs[1,0], color='C0')
+    show_variable_histogram(
+        df=dfs['lLAG10'], variable='Mean (Robust)_Width',
+        label_dict=label_dict, ax=axs[1,1], color='C1')
+    axs[1,1].sharex(axs[1,0])
+    # Remove y labels for right column
+    axs[0,1].set_ylabel('')
+    axs[1,1].set_ylabel('')
+    # fig.tight_layout()
+
+    fig.tight_layout(pad=1, h_pad=0.5, w_pad=0.05)
+    if save_figure:
+        fig.savefig(filename, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600)
 
 def plot_mismatch_panel_single_gene(
     df: pd.DataFrame,
@@ -275,51 +309,70 @@ def plot_mismatch_panel_single_gene(
         yerr=3*df_controls[y_var].std(),
         fmt='o',
         color='black',
+        # Marker size
+        markersize=5,
+        linewidth=1,
     )
 
     ax.set_ylabel(label_dict[y_var])
-    ax.set_title(gene)
+    # ax.set_title(gene)
 
 def plot_mismatch_panels_multiple_genes(
     dfs: dict[str, pd.DataFrame],
     label_dict: dict,
-    color: str = None
+    save_figure: bool = False
 ):
-    fig, axs = plt.subplots(2, 2, figsize=(4.5, 4.5), sharex=True)
-    axs[1,0].sharey(axs[0,0])
-    axs[0,1].sharey(axs[0,0])
-
+    fig, axs = plt.subplots(2, 1, figsize=(2.3/1.5, 2.3), sharex=True)
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='rplQ',
         x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
         y_var='Mean (Robust)_Length',
         label_dict=label_dict,
-        ax=axs[0,0], color=color
+        ax=axs[0], color='C0'
     )
+
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='ftsW',
         x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
         y_var='Mean (Robust)_Length',
         label_dict=label_dict,
-        ax=axs[0,1], color=color
+        ax=axs[0], color='C1'
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='pyk',
         x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
         y_var='Mean (Robust)_Length',
         label_dict=label_dict,
-        ax=axs[1,0], color=color
+        ax=axs[0], color='C2'
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='murB',
         x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
         y_var='Mean (Robust)_Width',
         label_dict=label_dict,
-        ax=axs[1,1], color=color
-    )
+        ax=axs[1], color='C4'
+    )    
+    # Set y axis of axs[0] to log scale
+    axs[0].set_yscale('log')
+    for ax in axs:
+        ax.set_xlim(0,1)
+    # Set y ticks of axs[0] to [2, 3, 4, 6]
+    axs[0].set_yticks([3, 4, 5, 6, 7])
+    # Set y tick labels of axs[0] to ['2', '3', '4', '6']
+    axs[0].set_yticklabels(['3', '4', '5', '6', '7'])
 
-    fig.supxlabel(label_dict['Mean (Robust)_Instantaneous Growth Rate: Volume'], y = 0.05, fontsize=plt.rcParams['axes.labelsize'])
-    fig.tight_layout()
+    axs[1].set_yticks([1.2, 1.25])
+    axs[1].set_yticklabels(['1.20', '1.25'])
+    axs[1].set_xlabel(label_dict['Mean (Robust)_Instantaneous Growth Rate: Volume'])
+    # 1. Use the built-in helper function to align Y-axis labels across all subplots
+    # This aligns the center of the labels
+    fig.align_ylabels([axs[0], axs[1]])
+    fig.tight_layout(pad=1, h_pad=0.5, w_pad=0.05)
+    if save_figure:
+        plt.savefig(
+            filepaths.headpath / 'bmarlin_manuscript/figure_2/mismatch_panels.png',
+            transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
+        )
 
 def bivariate_plot(
     df,
@@ -368,6 +421,79 @@ def bivariate_plot_with_subsets(
     bivariate_plot(df=df_controls, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_controls, alpha=0.5, s=2, **kwargs)
 
 def show_volcano_plot(
+    df_stats: pd.DataFrame,
+    var: str,
+    ax,
+    df_annotate: pd.DataFrame,
+    df_control_stats = None,
+    subset_gene_list: list[str] = None,
+    label_dict: dict = None,
+    save_figure: bool = False,
+    
+):
+    df_stats.plot(
+        x=('Value', var),
+        y=('nlog10pval', var),
+        kind='scatter', s=5, ax=ax, alpha=0.2, c = 'C2',
+        # edgecolors=None,
+        # linewidth=0,
+        marker='o',
+    )
+
+    if subset_gene_list is not None:
+        df_stats.loc[lambda df_:df_['grna','Gene'].isin(subset_gene_list), :].plot(
+            x=('Value', var),
+            y=('nlog10pval', var),
+            kind='scatter', s=15, c='C4', ax=ax, alpha=0.5,
+            edgecolors='black',
+            linewidth=0.5,
+            marker='o'
+        )
+
+    df_stats.loc[lambda df_:df_['grna','Category']=='control', :].plot(
+        x=('Value', var),
+        y=('nlog10pval', var),
+        kind='scatter', s=8, c='black', ax=ax, alpha=0.5,
+    )
+    ax.set_ylim([-0.2, 4.2])
+    texts = []
+    for _, row in df_annotate.iterrows():
+        texts.append(
+            ax.text(x=row['Value', var], y=row['nlog10pval', var], s=row['grna', 'Gene'],
+                ha='left', va='top', fontsize=6, color='black')
+        )
+    _= adjust_text(
+        texts,
+        arrowprops=dict(arrowstyle='-', color='black', lw=0.5),
+        ax=ax,
+        force_points=10,
+        force_text=10,
+        # force_pull=0.001,
+        min_arrow_len=1,
+        shrinkA=20,
+    )
+    
+    ax.axhline(-np.log10(0.05), color='black', linestyle='--', linewidth=1)
+
+    if df_control_stats is not None:
+        ax.axvline(
+            df_control_stats.loc['mean+3std', var],
+            color='black', linestyle='--', linewidth=1
+        )
+        ax.axvline(
+            df_control_stats.loc['mean-3std', var],
+            color='black', linestyle='--', linewidth=1
+        )
+    ax.set_ylabel("$-\log_{10}($FDR$)$")
+    ax.set_xlabel(label_dict[var] if label_dict is not None else var)
+    
+    if save_figure:
+        plt.savefig(
+            filepaths.headpath / 'bmarlin_manuscript/figure_2/length_volcano_plot.png',
+            transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
+        )
+
+def show_volcano_plot_old(
     df_stats: pd.DataFrame,
     var: str,
     ax,

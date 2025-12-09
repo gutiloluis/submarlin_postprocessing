@@ -28,13 +28,38 @@ dfs = {key: steady_state_viz.load_and_pivot_all_steady_state_dfs(
 #                 [['Experiment #', 'File Index', 'File Trench Index', 'opLAG1_id', 'Gene']]
 #                 for key in exp_groups}
 
+#%%
+############################################################
+## Figure 2
+############################################################
+#%% Histograms
+%load_ext autoreload
+%autoreload 2
+import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
+plt.style.use('steady_state.mplstyle')
+long_label = filepaths.long_labels
+# Show all variables histograms (2x2 grid of plots)
+steady_state_viz.show_all_variables_histograms(
+    dfs,
+    label_dict=long_label,
+    save_figure=True
+)
+# steady_state_viz.show_all_histograms(dfs, label_dict=long_label)
+#%% Mismatch plots
+steady_state_viz.plot_mismatch_panels_multiple_genes(
+    dfs,
+    label_dict=long_label,
+    save_figure=True
+)
+
+#%%
+############################################################
+## Load data with p-value
+############################################################
 column_names = filepaths.column_names_no_est
 # short_label = filepaths.short_labels
 long_label = filepaths.long_labels_no_est
 
-############################################################
-## Load data with p-value
-############################################################
 dfs_stats = {
     key: pd.read_pickle(
         filepaths.steady_state_estimator_pvalues_pivoted_filenames[key]) 
@@ -68,10 +93,36 @@ metadata_dfs = {key: pd.read_pickle(filepaths.final_barcodes_df_condensed_filena
                 )
                 for key in exp_groups}
 
+
+#%% Show length volcano plot
 #%%
 experiment_numbers_after_merge_to_key = filepaths.experiment_numbers_after_merge_to_key
 exp_key = 'lLAG08'
 
+#%%
+indices_annotate_volcano = filepaths.indices_annotate_volcano[exp_key]
+indices_last_t = filepaths.indices_last_t[exp_key]['rplQ'][1221]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+
+fig, ax = plt.subplots(1, 1, figsize=(2.1,2.1))
+
+df_stats = dfs_stats[exp_key]
+df_annotate = df_stats.loc[
+    lambda df_: df_['opLAG1_id'].isin(indices_annotate_volcano['length']),
+]
+
+steady_state_viz.show_volcano_plot(
+    df_stats = df_stats,
+    var=column_names['length'],
+    ax=ax,
+    df_annotate = df_annotate,
+    df_control_stats = dfs_controls_stats[exp_key],
+    subset_gene_list = filepaths.genes_divisome,
+    label_dict = long_label,
+    save_figure=True,
+)
+
+#%%
 indices_annotate_volcano = filepaths.indices_annotate_volcano[exp_key]
 indices_last_t = filepaths.indices_last_t[exp_key]['rplQ'][1221]
 metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
@@ -92,7 +143,7 @@ df_annotate = df_stats.loc[
     lambda df_: df_['opLAG1_id'].isin(indices_annotate_volcano['length']),
 ]
 
-steady_state_viz.show_volcano_plot(
+steady_state_viz.show_volcano_plot_old(
     df_stats = df_stats,
     var=column_names['length'],
     ax=axs[0],
@@ -315,19 +366,6 @@ steady_state_viz.show_volcano_plot(
     # subset_gene_list = filepaths,
 )
 
-#%%
-############################################################
-## Figure 2
-############################################################
-#%% Histograms
-%load_ext autoreload
-%autoreload 2
-import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
-plt.style.use('steady_state.mplstyle')
-long_label = filepaths.long_labels
-steady_state_viz.show_all_histograms(dfs, label_dict=long_label)
-#%% Mismatch plots
-steady_state_viz.plot_mismatch_panels_multiple_genes(dfs, label_dict=long_label, color=None)
 
 #%%
 ############################################################
