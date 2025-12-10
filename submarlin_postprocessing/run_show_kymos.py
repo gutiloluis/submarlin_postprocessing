@@ -57,19 +57,69 @@ sample_variant_kymos.show_example_kymo_for_variables(metadata_dfs=metadata_dfs)
 # TODO: Crop and show scale bar, modularize better
 
 #%%
-scale_kwargs = {
-    'fixed_value': 5,
-    'width_fraction': 0.04,
-    'location': 'lower right',
-    'color': 'white',
-    # 'scale_linewidth': 5,
-    'font_properties': {'size': 15, 'weight': 'bold', 'family': 'sans-serif'},
-}
+###############
+# Figure 2 calls:
+###############
+#%%
+plt.style.use('steady_state_viz/steady_state.mplstyle')
+#%%
+# 3 example kymos
+sample_variant_kymos.show_three_example_kymos(save_figure=True)
 
 #%%
+#rplQ
 exp_group = 'lLAG08'
 df = metadata_dfs[exp_group]
-df
+metadata_var = sample_variant_kymos.filter_metadata(
+    df,
+    5200,
+)
+sample_variant_kymos.show_multiple_kymos(
+    metadata=metadata_var,
+    indices=np.arange(10),
+    key_experiment_numbers_after_merge_to_key=filepaths.experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    every_n_frames=3,
+    random_sample=False,
+    # random_sample_n
+)
+
+#%% fliH
+exp_group = 'lLAG10'
+df = metadata_dfs[exp_group]
+metadata_var = sample_variant_kymos.filter_metadata(
+    df,
+    4381,
+)
+sample_variant_kymos.show_multiple_kymos(
+    metadata=metadata_var,
+    indices=np.arange(20),
+    key_experiment_numbers_after_merge_to_key=filepaths.experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    every_n_frames=3,
+    random_sample=False,
+    # random_sample_n
+)
+
+#%% cdaR (Good: 100072563)
+exp_group = 'lLAG10'
+df = metadata_dfs[exp_group]
+metadata_var = sample_variant_kymos.filter_metadata(
+    df,
+    320,
+)
+sample_variant_kymos.show_multiple_kymos(
+    metadata=metadata_var,
+    indices=np.arange(20),
+    key_experiment_numbers_after_merge_to_key=filepaths.experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    every_n_frames=3,
+    random_sample=False,
+    # random_sample_n
+)
+
+
+
 #%%
 exp_group = 'lLAG10'
 # metadata_variant = sample_variant_kymos.filter_metadata(
@@ -128,13 +178,90 @@ experiment_numbers_after_merge_to_key = filepaths.experiment_numbers_after_merge
 #%%
 import matplotlib.pyplot as plt
 
+# rplQ
 sample_variant_kymos.show_last_timepoints(
     metadata=metadata_var,
     key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
     kymograph_paths=filepaths.kymograph_paths,
     pad_width=2,
-    title='rplQ',
-    ax=plt.gca()
+    ax=plt.gca(),
+    title='',
+    border_trim_x=0,
+    border_trim_top=10,
+    border_trim_bottom=10
 )
 
 # %%
+gene = 'divIC'
+indices_last_t = filepaths.indices_last_t[exp_key][gene][287]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+sample_variant_kymos.show_last_timepoints(
+    metadata=metadata_var,
+    key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    pad_width=2,
+    # title=gene,
+    ax=plt.gca(),
+)
+
+#%%
+gene = 'eno'
+indices_last_t = filepaths.indices_last_t[exp_key][gene][5200]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+sample_variant_kymos.show_last_timepoints(
+    metadata=metadata_var,
+    key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    pad_width=2,
+    # title=gene,
+    ax=plt.gca(),
+)
+
+#%%
+gene = 'dnaA'
+indices_last_t = filepaths.indices_last_t[exp_key][gene][14]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+sample_variant_kymos.show_last_timepoints(
+    metadata=metadata_var,
+    key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    pad_width=2,
+    # title=gene,
+    ax=plt.gca(),
+)
+
+#%%
+# Controls
+indices_last_t = filepaths.indices_last_t[exp_key]['control'][8449]
+metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+sample_variant_kymos.show_last_timepoints(
+    metadata=metadata_var,
+    key_experiment_numbers_after_merge_to_key=experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    pad_width=2,
+    # title=gene,
+    ax=plt.gca(),
+)
+#%%
+sample_variant_kymos.show_examples_final_timepoints(
+    metadata_dfs)
+#%%
+
+metadata_dfs[exp_key][metadata_dfs[exp_key]['Category'] == 'control']
+
+#%%
+exp_group = 'lLAG08'
+df = metadata_dfs[exp_group]
+metadata_var = sample_variant_kymos.filter_metadata(
+    df,
+    8449,
+)
+sample_variant_kymos.show_multiple_kymos(
+    metadata=metadata_var,
+    indices=np.arange(15),
+    key_experiment_numbers_after_merge_to_key=filepaths.experiment_numbers_after_merge_to_key,
+    kymograph_paths=filepaths.kymograph_paths,
+    every_n_frames=3,
+    random_sample=False,
+    # random_sample_n
+)

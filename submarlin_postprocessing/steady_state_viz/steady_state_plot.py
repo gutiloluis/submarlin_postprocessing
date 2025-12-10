@@ -123,6 +123,12 @@ steady_state_viz.show_volcano_plot(
 )
 
 #%%
+df_stats[df_stats['opLAG1_id'] == 5200]
+
+#%%
+dfs_controls_stats[exp_key]
+
+#%%
 indices_annotate_volcano = filepaths.indices_annotate_volcano[exp_key]
 indices_last_t = filepaths.indices_last_t[exp_key]['rplQ'][1221]
 metadata_var = metadata_dfs[exp_key].loc[indices_last_t]

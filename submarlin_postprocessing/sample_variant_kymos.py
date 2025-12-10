@@ -186,11 +186,15 @@ def show_single_kymo(
     final_frame: int = -1,
     every_n_frames: int = 1,
     border_trim_x: int = 0,
+    border_trim_top: int = 0,
+    border_trim_bottom: int = 0,
     filename_prefix: str = 'kymograph_',
+    ax = None,
     key: str = 'mCherry',
     cmap: str = 'gray',
     figsize=None,#(8,4),
     imshow_kwargs: dict = {},
+    show_scale: bool = False,
     scale_kwargs={},
     savepath: Path | None = None,
 ):
@@ -206,34 +210,46 @@ def show_single_kymo(
 
     if border_trim_x > 0:
         kymo = kymo[:, :, border_trim_x:-border_trim_x]
-
+    
     if flip_vertically:
         kymo = np.fliplr(kymo)
+
+    if border_trim_top > 0:
+        kymo = kymo[:, border_trim_top:, :]
+
+    if border_trim_bottom > 0:
+        kymo = kymo[:, :-border_trim_bottom, :]    
 
     print(f"experiment number, file index, file trench index")
     print(f"{experiment_key}, {file_idx}, {file_trench_idx}")
     
-    fig, ax = plt.subplots(figsize=figsize)
-    ax.imshow(unfold_kymograph(kymo), cmap=cmap, **imshow_kwargs)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    unfolded_kymograph = unfold_kymograph(kymo)
+    print(unfolded_kymograph.shape)
+    ax.imshow(unfolded_kymograph, cmap=cmap, **imshow_kwargs)
     ax.axis('off')
-
-    scalebar = ScaleBar(
-        dx=0.211903923790586,
-        units="um",
-        # fixed_value=5,
-        frameon=False, # No box behind scalebar
-        # label_loc = 'left',
-        # box_alpha=0,
-        # rotation="vertical-only",
-        # color='white',
-        **scale_kwargs,
-    )
-    ax.add_artist(scalebar)
+    if show_scale:
+        scalebar = ScaleBar(
+            dx=0.211903923790586,
+            units="um",
+            # fixed_value=5,
+            frameon=False, # No box behind scalebar
+            # label_loc = 'left',
+            # box_alpha=0,
+            # rotation="vertical-only",
+            # color='white',
+            **scale_kwargs,
+        )
+        ax.add_artist(scalebar)
 
     if savepath is not None:
         plt.savefig(savepath, transparent=True, bbox_inches='tight', pad_inches=0, dpi=500)
 
-    return fig, ax
+    if ax is None:
+        return fig, ax
+    else:
+        return ax
 
 def show_single_kymo_df_index(
     metadata: pd.DataFrame,
@@ -339,9 +355,13 @@ def show_last_timepoints(
     key_experiment_numbers_after_merge_to_key: dict[int, str],
     kymograph_paths: dict[str, Path],
     ax: plt.Axes,
-    pad_width: int = 5,
     title="",
-    
+    pad_width: int = 5,
+    border_trim_x: int = 0,
+    border_trim_top: int = 0,
+    border_trim_bottom: int = 0,
+    show_scale: bool = False,
+    scale_kwargs={},
 ):
     """
     Show the last timepoints of all kymographs in the metadata DataFrame.
@@ -364,11 +384,35 @@ def show_last_timepoints(
         if orientation == 'bottom':
             img = np.flipud(img)
 
-        pad_color = np.percentile(img, 2)
+        if border_trim_x > 0:
+            img = img[:, border_trim_x:-border_trim_x]
+
+        # pad_color = np.percentile(img, 2)
+        # pad
+        pad_color = np.percentile(img, 100)
         # Append to imgs array
         imgs = np.concatenate((imgs, img), axis=1) if imgs.size else img
         # Append padding
         imgs = np.concatenate((imgs, np.full((img.shape[0], pad_width), pad_color, dtype=np.uint16)), axis=1)
+
+    if border_trim_top > 0:
+        imgs = imgs[border_trim_top:, :]
+
+    if border_trim_bottom > 0:
+        imgs = imgs[:-border_trim_bottom, :]
+
+    if show_scale:
+        scalebar = ScaleBar(
+            dx=0.211903923790586,
+            units="um",
+            frameon=False, # No box behind scalebar
+            # label_loc = 'left',
+            # box_alpha=0,
+            # rotation="vertical-only",
+            # color='white',
+            **scale_kwargs,
+        )
+        ax.add_artist(scalebar)
 
     # plt.figure(figsize=(30, 5))
     ax.set_title(title)
@@ -562,12 +606,227 @@ def show_example_phenotyping_kymo():
 # Figure 2
 ##################
 
+def show_three_example_kymos(
+    save_figure = False
+):
+
+    scale_kwargs = {
+            'fixed_value': 5,
+            'width_fraction': 0.04,
+            'location': 'lower left',
+            'color': 'white',
+            'scale_loc': 'none',
+            'border_pad': 0.1,
+            # 'scale_linewidth': 5,
+            'font_properties': {'size': 7, 'weight': 'bold', 'family': 'sans-serif'},
+        }
+
+    imshow_kwargs = {'vmin': 300, 'vmax': 1500}
+    border_trim_bottom = 50
+    border_trim_top = 12
+    # ctsR
+    fig, axs = plt.subplots(3,1, figsize=(5, 5))
+
+    experiment_key = 'lLAG10_2'
+    file_index = 790
+    file_trench_index = 59
+    show_single_kymo(
+        experiment_key = experiment_key,
+        file_idx = file_index,
+        file_trench_idx = file_trench_index,
+        kymograph_paths = filepaths.kymograph_paths,
+        flip_vertically = True,
+        every_n_frames = 3,
+        border_trim_x = 2,
+        initial_frame = 0,
+        final_frame = -7,
+        border_trim_top = border_trim_top,
+        border_trim_bottom = border_trim_bottom,
+        # figsize = (2.3, 2.3),
+        imshow_kwargs = imshow_kwargs,
+        scale_kwargs = scale_kwargs,
+        ax=axs[0],
+        # savepath = filepaths.headpath / 'bmarlin_manuscript' / 'figure_2' / 'three_kymos.png'
+    )
+
+    # ilvD
+    experiment_key = 'lLAG08_1'
+    file_index = 171
+    file_trench_index = 6
+    show_single_kymo(
+        experiment_key = experiment_key,
+        file_idx = file_index,
+        file_trench_idx = file_trench_index,
+        kymograph_paths = filepaths.kymograph_paths,
+        flip_vertically = False,
+        every_n_frames = 3,
+        border_trim_x = 2,
+        border_trim_top = border_trim_top,
+        border_trim_bottom = border_trim_bottom,
+        # figsize = (2.3, 2.3),
+        # imshow_kwargs = imshow_kwargs,
+        scale_kwargs = scale_kwargs,
+        ax=axs[1],
+        # savepath = filepaths.headpath / 'bmarlin_manuscript' / 'figure_2' / 'three_kymos.png'
+    )
+
+    # murG
+    experiment_key = 'lLAG08_1'
+    file_index = 1002
+    file_trench_index = 101
+    show_single_kymo(
+        experiment_key = experiment_key,
+        file_idx = file_index,
+        file_trench_idx = file_trench_index,
+        kymograph_paths = filepaths.kymograph_paths,
+        flip_vertically = True,
+        every_n_frames = 3,
+        border_trim_x = 2,
+        border_trim_top = border_trim_top,
+        border_trim_bottom = border_trim_bottom,
+        # figsize = (2.3, 2.3),
+        show_scale = True,
+        # imshow_kwargs = imshow_kwargs,
+        scale_kwargs = scale_kwargs,
+        ax=axs[2],
+        # savepath = filepaths.headpath / 'bmarlin_manuscript' / 'figure_2' / 'three_kymos.png'
+    )
+    
+    fig.tight_layout(pad=0.5)
+    if save_figure:
+        plt.savefig(
+            filepaths.headpath / 'bmarlin_manuscript' / 'figure_2' / 'three_kymos.png',
+            transparent=True,
+            bbox_inches='tight',
+            pad_inches=0,
+            dpi=500
+        )
+
+def show_examples_final_timepoints(
+    metadata_dfs,
+):
+
+    scale_kwargs = {
+        'fixed_value': 5,
+        'width_fraction': 0.04,
+        'location': 'lower right',
+        'color': 'white',
+        'scale_loc': 'none',
+        'border_pad': 0.5,
+        # 'scale_linewidth': 5,
+        # 'rotation': 'vertical-only',
+        'font_properties': {'size': 10, 'weight': 'bold', 'family': 'sans-serif'},
+    }
+
+    border_trim_top = 12
+    border_trim_bottom = 60
+
+    fig, ax = plt.subplots(1,1, figsize=(1.5, 2))
+    exp_key = 'lLAG08'
+    gene = 'divIC'
+    indices_last_t = filepaths.indices_last_t[exp_key][gene][287]
+    metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+    show_last_timepoints(
+        metadata=metadata_var,
+        key_experiment_numbers_after_merge_to_key=filepaths.experiment_numbers_after_merge_to_key,
+        kymograph_paths=filepaths.kymograph_paths,
+        pad_width=2,
+        # title=gene,
+        ax=ax,
+        border_trim_top=border_trim_top,
+        border_trim_bottom=border_trim_bottom,
+        # show_scale=True,
+        # scale_kwargs=scale_kwargs,
+    )
+    fig.savefig(
+        filepaths.headpath / 'bmarlin_manuscript' / 'figure_2' / 'example_final_timepoints_divIC.png',
+        transparent=True,
+        bbox_inches='tight',
+        pad_inches=0,
+        dpi=600
+    )
+
+    fig, ax = plt.subplots(1,1, figsize=(1.5, 2))
+    gene = 'eno'
+    indices_last_t = filepaths.indices_last_t[exp_key][gene][5200]
+    metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+    show_last_timepoints(
+        metadata=metadata_var,
+        key_experiment_numbers_after_merge_to_key=filepaths.experiment_numbers_after_merge_to_key,
+        kymograph_paths=filepaths.kymograph_paths,
+        pad_width=2,
+        # title=gene,
+        ax=ax,
+        border_trim_top=border_trim_top,
+        border_trim_bottom=border_trim_bottom,
+        # show_scale=True,
+        # scale_kwargs=scale_kwargs,
+    )
+
+    fig.savefig(
+        filepaths.headpath / 'bmarlin_manuscript' / 'figure_2' / 'example_final_timepoints_eno.png',
+        transparent=True,
+        bbox_inches='tight',
+        pad_inches=0,
+        dpi=600
+    )
+
+    fig, ax = plt.subplots(1,1, figsize=(1.5, 2))
+    gene = 'dnaA'
+    indices_last_t = filepaths.indices_last_t[exp_key][gene][14]
+    metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+    show_last_timepoints(
+        metadata=metadata_var,
+        key_experiment_numbers_after_merge_to_key=filepaths.experiment_numbers_after_merge_to_key,
+        kymograph_paths=filepaths.kymograph_paths,
+        pad_width=2,
+        # title=gene,
+        ax=ax,
+        border_trim_top=border_trim_top,
+        border_trim_bottom=border_trim_bottom,
+        # show_scale=True,
+        # scale_kwargs=scale_kwargs,
+    )
+
+    fig.savefig(
+        filepaths.headpath / 'bmarlin_manuscript' / 'figure_2' / 'example_final_timepoints_dnaA.png',
+        transparent=True,
+        bbox_inches='tight',
+        pad_inches=0,
+        dpi=600
+    )
+
+    fig, ax = plt.subplots(1,1, figsize=(1.5, 2))
+    gene = 'control'
+    indices_last_t = filepaths.indices_last_t[exp_key][gene][8449]
+    metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+    show_last_timepoints(
+        metadata=metadata_var,
+        key_experiment_numbers_after_merge_to_key=filepaths.experiment_numbers_after_merge_to_key,
+        kymograph_paths=filepaths.kymograph_paths,
+        pad_width=2,
+        # title=gene,
+        ax=ax,
+        border_trim_top=border_trim_top,
+        border_trim_bottom=border_trim_bottom,
+        show_scale=True,
+        scale_kwargs=scale_kwargs,
+    )
+
+    fig.savefig(
+        filepaths.headpath / 'bmarlin_manuscript' / 'figure_2' / 'example_final_timepoints_control.png',
+        transparent=True,
+        bbox_inches='tight',
+        pad_inches=0,
+        dpi=600
+    )
+
 def load_metadata_dfs(exp_groups:list) -> dict:
     '''
     Load metadata DataFrames for given experiment groups.
     '''
     metadata_dfs = {key: pd.read_pickle(filepaths.final_barcodes_df_condensed_filenames[key])
-                    [['Experiment #', 'File Index', 'File Trench Index', 'opLAG1_id', 'Gene', 'lane orientation']]
+                    [['Experiment #', 'File Index', 'File Trench Index', 'opLAG1_id', 'Gene', 'Category', 'lane orientation']]
                     .astype(
                         {
                             'Experiment #': 'uint8',
