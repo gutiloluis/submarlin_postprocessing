@@ -210,6 +210,84 @@ def load_format_and_save_ecoli_pvalues_df(
 #################
 # Histograms
 #################
+
+##### Find and define gene groups
+def get_gene_groups(
+    all_genes,
+    go_enrichment_analysis,
+):
+    go_term = 'GO:0015934'  # large ribosomal subunit
+    genes_large_ribosomal_subunit = go_enrichment_analysis.search_go(go_term)
+    go_term = 'GO:0015935'  # small ribosomal subunit
+    genes_small_ribosomal_subunit = go_enrichment_analysis.search_go(go_term)
+    go_term = 'GO:0044281'  # small molecule metabolic process
+    genes_small_molecule_metabolic_process = go_enrichment_analysis.search_go(go_term)
+    go_term = 'GO:0043039'  # tRNA aminoacylation
+    genes_tRNA_aminoacylation = go_enrichment_analysis.search_go(go_term)
+
+    genes_initiation_factors = ['infA', 'infB']
+
+    return {
+        'ribosome': list(
+            set(genes_large_ribosomal_subunit).union(set(genes_small_ribosomal_subunit))
+        ),
+        # 'metabolism': genes_small_molecule_metabolic_process,
+        'trna_synth': genes_tRNA_aminoacylation,
+        'init_factors': genes_initiation_factors,
+    }
+
+def plot_length_growth_scatter(
+    dfp,
+    gene_groups,
+    plot_metadata,
+    x_lim=(0, 1.8),
+    y_lim=(1.8, 12),
+    yticks = [2, 4, 8],
+):
+    '''
+    Plot length vs. growth rate scatter plot for different gene groups.
+    '''
+    plt.figure(figsize=(2.3, 2.3))
+    # plt.scatter(
+    #     x=dfp[plot_metadata['col_name_steady_state']['growth_rate']],
+    #     y=dfp[plot_metadata['col_name_steady_state']['length']],
+    #     color='gray',
+    #     alpha=0.2,
+    #     s=1,
+    #     label='All genes',
+    # )
+    colors = {
+        'ribosome': 'tab:blue',
+        'metabolism': 'tab:orange',
+        'trna_synth': 'tab:green',
+        'init_factors': 'tab:red',
+    }
+    for group_name, genes in gene_groups.items():
+        dfp_subset = dfp.loc[dfp['Gene'].isin(genes)]
+        plt.scatter(
+            x=dfp_subset[plot_metadata['col_name_steady_state']['growth_rate']],
+            y=dfp_subset[plot_metadata['col_name_steady_state']['length']],
+            color=colors[group_name],
+            alpha=0.7,
+            label=group_name,
+            # edgecolor='black',
+            s=2,
+        )
+    plt.xscale('linear')
+    plt.yscale('log', base=2)
+    plt.xlabel('Growth rate (1/hr)')
+    plt.ylabel('Cell length (µm)')
+    # plt.title('Cell length vs. Growth rate by Gene Group')
+    # plt.legend()
+    # plt.grid(False)
+    plt.ylim(*y_lim)
+    plt.xlim(*x_lim)
+    yticks = yticks
+    plt.yticks(yticks, [str(y) for y in yticks])
+    # plt.axhline(y=4, color='black', linestyle='--', linewidth=1)
+    # plt.tight_layout()
+
+##### Plot histograms
 def plot_histograms_of_slopes(
     df_slopes_all,
     dfs_slopes_subsets,
@@ -280,6 +358,9 @@ def make_slope_plot(
     y_var='length',
     x_label_meta_column='title',
     y_label_meta_column='title',
+    xlim=(0.4, 1.5),
+    ylim=(2.4, 7),
+    yticks=[3,4,5,6,7],
 ):
     '''
     Make a slope plot for a given gene.
@@ -298,11 +379,11 @@ def make_slope_plot(
     df_gene
 
     df_pvalues.plot.scatter(
-        x=x_col, y=y_col,
+        x=x_col, y=y_col, s=2,
         ax=ax, color='gray', alpha=0.1, zorder=-1)
     df_gene.plot.scatter(
         x=x_col, y=y_col,
-        color = 'tab:blue', edgecolor='black', s=35,
+        color = 'tab:blue', edgecolor='black', s=30,
         ax=ax, xlabel=x_label, ylabel=y_label)
 
     slope = _get_and_plot_linear_fit(
@@ -312,20 +393,29 @@ def make_slope_plot(
     )
 
     ax.set_yscale('log', base=2)
-    ax.set_ylim(2.2,7.5)
-    ax.set_xlim(0.2, 1.6)
+    ax.set_ylim(ylim)
+    ax.set_xlim(xlim)
 
-    yticks = [3, 4, 5, 6, 7]
+    # yticks = [3, 4, 5, 6, 7]
     ax.set_yticks(yticks)
     ax.set_yticklabels([str(y) for y in yticks])
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
 
-    if slope is not None:
-        ax.set_title(f'{gene}, Slope: {slope:.2f}', fontsize=12)
-    else:
-        ax.set_title(f'{gene}, Slope: N/A', fontsize=12)
+    ax.annotate(
+        f'{gene}\nSlope: {slope:.2f}' if slope is not None else f'{gene}\nSlope: N/A',
+        xy=(0.95, 0.95),
+        xycoords='axes fraction',
+        ha='right',
+        va='top',
+        fontsize=7,
+    )
+
+    # if slope is not None:
+    #     ax.set_title(f'{gene}, Slope: {slope:.2f}', fontsize=12)
+    # else:
+    #     ax.set_title(f'{gene}, Slope: N/A', fontsize=12)
         
 def make_grid_slope_plots(
     df_pvalues,

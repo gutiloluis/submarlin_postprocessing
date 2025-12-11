@@ -9,12 +9,11 @@ import submarlin_postprocessing.goanalysis as goanalysis
 import submarlin_postprocessing.slope_analysis as slope_analysis
 import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
 import submarlin_postprocessing.clustering_viz as clustering_viz
-#%%
+plt.style.use('steady_state_viz/steady_state.mplstyle')
 steady_state_slopes_filenames = filepaths.steady_state_slopes_filenames
 # steady_state_estimator_pvalues_pivoted_filenames = filepaths.steady_state_estimator_pvalues_pivoted_filenames
 steady_state_estimator_pvalues_filenames = filepaths.steady_state_estimator_pvalues_filenames
 control_stats_filenames = filepaths.control_stats_filenames
-
 plot_metadata = clustering_viz.initialize_plot_metadata()
 
 keys = ['lLAG08', 'lLAG10']
@@ -23,76 +22,298 @@ steady_state_slopes_dfs = {
     for key in keys
 }
 
+dfs_8 = steady_state_slopes_dfs['lLAG08']
+dfs_10 = steady_state_slopes_dfs['lLAG10']
+dfs_e = pd.read_csv(filepaths.steady_state_slopes_filenames['lDE20'], index_col=0)
+
+dfp_e = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['lDE20'])
+dfp_b = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['merged_all'])
+
+goea_b = goanalysis.GOEnrichmentAnalysis()
+goea_e = goanalysis.GOEnrichmentAnalysis(is_bacillus=False)
+
 # SECONDS CONVERTED TO HOURS EVEN THOUGH COL NAME IS Delta time (s)
 min_points = 3
 ci_threshold = 0.5
 growth_thr = np.inf
 
-df_8 = steady_state_slopes_dfs['lLAG08']
-df_10 = steady_state_slopes_dfs['lLAG10']
-
-
-#%% PIVOT E COLI PVALUES
-dfp_ecoli = pd.read_pickle(steady_state_estimator_pvalues_filenames['lDE20'])
-# dfp_ecoli
-
-#%%
-slope_analysis.load_format_and_save_ecoli_pvalues_df(
-    filepath = steady_state_estimator_pvalues_filenames['lDE20'],
-    plot_metadata = plot_metadata,
-    save_filepath = filepaths.steady_state_estimator_pvalues_pivoted_filenames['lDE20'],
-)
-#%%
-(
-    dfp_ecoli
-    .pipe(
-        steady_state_viz.pivot_pvalue_df,
-        index_name = 'oDEPool7_id',
-        cols_grnas=['EcoWG1_id', 'Gene', 
-                    'Category', 'N Observations'],
-    )
-    .pipe(
-        slope_analysis.format_pvalues_df_to_single_index,
-        index_grna='oDEPool7_id',
-    )
-    .pipe(
-        clustering_viz.adjust_growth_rate_base_e_to_2,
-        metadata = plot_metadata,
-        var_name = 'growth_rate',
-        metadata_col_name = 'col_name_steady_state'
-    )
-    .pipe(
-        clustering_viz.convert_seconds_to_hours,
-        metadata = plot_metadata,
-        var_name = 't_idiv',
-        metadata_col_name = 'col_name_steady_state'
-    )
-)
-
-#%%
-dfp = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['merged_all'])
-#%%
+### IN CASE I NEED THEM FOR COMPARISON
 # dfp_8_load = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['lLAG08'])
 # dfp_10_load = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['lLAG10'])
 
+# # var = 'Instantaneous Growth Rate: Volume'
+# var = plot_metadata.loc['sep_disp','col_name_steady_state']
+# # var = ''
+# plt.scatter(
+#     x=dfp[var],
+#     y=-np.log10(dfp['FDR Merged: ' + var]),
+#     s=1
+# )
+
+# # dfp.plot.scatter(x= 'Instantaneous Growth Rate: Volume', y = 'FDR Merged: Instantaneous Growth Rate: Volume')
+
 #%%
-# var = 'Instantaneous Growth Rate: Volume'
-var = plot_metadata.loc['sep_disp','col_name_steady_state']
-# var = ''
-plt.scatter(
-    x=dfp[var],
-    y=-np.log10(dfp['FDR Merged: ' + var]),
-    s=1
-)
 
-# dfp.plot.scatter(x= 'Instantaneous Growth Rate: Volume', y = 'FDR Merged: Instantaneous Growth Rate: Volume')
+gene_groups_e = {
+    # 'ribo_stalk': ["rplJ","rplL"],
 
-#%% BEFORE START: GO analysis
-go_enrichment_analysis = goanalysis.GOEnrichmentAnalysis()
+'ribosome': ['rplA', 'rplB', 'rplC', 'rplD', 'rplE', 'rplF', 'rplI',\
+#  'rplJ', 
+ 'rplK', 
+#  'rplL', 
+ 'rplM', 'rplN', 'rplO', 'rplP', \
+ 'rplQ', 'rplR', 'rplS', 'rplT', 'rplU', 'rplV', 'rplW', \
+ 'rplX', 'rplY', 'rpmA', 'rpmB', 'rpmC', 'rpmD', 'rpmE', \
+ 'rpmF', 'rpmG', 'rpmH', 'rpmI', 'rpmJ', 'rpsA', 'rpsB', \
+ 'rpsC', 'rpsD', 'rpsE', 'rpsF', 'rpsG', 'rpsH', 'rpsI', \
+ 'rpsJ', 'rpsK', 'rpsL', 'rpsM', 'rpsN', 'rpsO', 'rpsP', \
+ 'rpsQ', 'rpsR', 'rpsS', 'rpsT', 'rpsU', 'ykgM', 'ykgO'],
 
+'trna_synth': ['alaS', 'argS', 'asnS', 'aspS', 'cysS', \
+'glnS', 'gltX', 'glyQ', 'glyS', 'hisS', 'ileS', 'leuS', \
+'lysS', 'lysU', 'metG', 'pheS', 'pheT', 'proS', 'serS', \
+'thrS', 'trpS',  'tyrS', 'valS'],
+
+'init_factors': ["infA","infB"]}
+
+dfp=dfp_e
+goea = goea_e
 all_genes = dfp['Gene'].tolist()
 all_genes = list(set(all_genes))
+# gene_groups_e = slope_analysis.get_gene_groups(
+#     all_genes=all_genes,
+#     go_enrichment_analysis=goea,
+# )
 
+
+dfp = dfp_b
+goea = goea_b
+all_genes = dfp['Gene'].tolist()
+all_genes = list(set(all_genes))
+gene_groups_b = slope_analysis.get_gene_groups(
+    all_genes=all_genes,
+    go_enrichment_analysis=goea,
+)
+gene_groups_b['init_factors'] = ["infA","infB"]
+
+#%% Growth vs. length scatter plot
+dfp = dfp_e
+gene_groups = gene_groups_e
+plt.style.use('steady_state_viz/steady_state.mplstyle')
+slope_analysis.plot_length_growth_scatter(dfp, gene_groups, plot_metadata)
+#%%
+dfp = dfp_b
+goea = goea_b
+all_genes = dfp['Gene'].tolist()
+all_genes = list(set(all_genes))
+gene_groups_b = slope_analysis.get_gene_groups(
+    all_genes=all_genes,
+    go_enrichment_analysis=goea,
+)
+
+E_COL_XLIM = (0,1.8)
+E_COL_YLIM = (1.8,12)
+E_COL_YTICKS = [2,4,8]
+
+B_SUB_XLIM = (0.4,1.5)
+B_SUB_YLIM = (2.4,7)
+B_SUB_YTICKS = [3,4,7]
+
+slope_analysis.plot_length_growth_scatter(
+    dfp, gene_groups_b, plot_metadata,
+    x_lim=B_SUB_XLIM,
+    y_lim=B_SUB_YLIM,
+    yticks=B_SUB_YTICKS,
+)
+
+#%%
+# dfs_e['Slope'].hist(bins=50)
+#%%
+go_term = 'GO:0006520'
+genes_aa_e = goea_e.search_go(go_term)
+genes_aa_e
+
+genes_aa_b = goea_b.search_go(go_term)
+genes_aa_b
+
+gene_groups_e['amino_acid_metabolism'] = genes_aa_e
+gene_groups_b['amino_acid_metabolism'] = genes_aa_b
+
+go_term = 'GO:0044281'  # small molecule metabolic process
+gene_groups_e['small_molecule_metabolism'] = goea_e.search_go(go_term)
+gene_groups_b['small_molecule_metabolism'] = goea_b.search_go(go_term)
+
+#%% # Growth length scatter
+
+dfp = dfp_e
+gene_groups = gene_groups_e
+#all grnas
+plt.scatter(
+    x=dfp[plot_metadata.loc['growth_rate','col_name_steady_state']],
+    y=dfp[plot_metadata.loc['length','col_name_steady_state']],
+    s=1, alpha=0.1, color='gray'
+)
+
+# plt.scatter(
+#     x=dfp.loc[lambda df_: df_['Gene'].isin(gene_groups['amino_acid_metabolism']), plot_metadata.loc['growth_rate','col_name_steady_state']],
+#     y=dfp.loc[lambda df_: df_['Gene'].isin(gene_groups['amino_acid_metabolism']), plot_metadata.loc['length','col_name_steady_state']],
+#     s=5)
+
+# plot trna_synth
+plt.scatter(
+    x=dfp.loc[lambda df_: df_['Gene'].isin(gene_groups['trna_synth']), plot_metadata.loc['growth_rate','col_name_steady_state']],
+    y=dfp.loc[lambda df_: df_['Gene'].isin(gene_groups['trna_synth']), plot_metadata.loc['length','col_name_steady_state']],
+    s=5)
+#%%
+
+dfp = dfp_b
+gene_groups = gene_groups_b
+#all grnas
+plt.scatter(
+    x=dfp[plot_metadata.loc['growth_rate','col_name_steady_state']],
+    y=dfp[plot_metadata.loc['length','col_name_steady_state']],
+    s=1, alpha=0.1, color='gray'
+)
+
+plt.scatter(
+    x=dfp.loc[lambda df_: df_['Gene'].isin(gene_groups['small_molecule_metabolism']), plot_metadata.loc['growth_rate','col_name_steady_state']],
+    y=dfp.loc[lambda df_: df_['Gene'].isin(gene_groups['small_molecule_metabolism']), plot_metadata.loc['length','col_name_steady_state']],
+    s=5)
+
+# plot trna_synth
+plt.scatter(
+    x=dfp.loc[lambda df_: df_['Gene'].isin(gene_groups['trna_synth']), plot_metadata.loc['growth_rate','col_name_steady_state']],
+    y=dfp.loc[lambda df_: df_['Gene'].isin(gene_groups['trna_synth']), plot_metadata.loc['length','col_name_steady_state']],
+    s=5)
+
+
+#%%
+
+fig, axs = plt.subplots(2,4, figsize=(1.3*4,1.3*2))
+ax = axs[0,0]
+gene_group = 'ribosome'
+ax.hist(
+    dfs_e.loc[lambda df_: df_.index.isin(gene_groups_e[gene_group]), 'Slope'],
+    histtype='step',
+    # bins=20
+)
+ax = axs[0,1]
+gene_group = 'trna_synth'
+ax.hist(
+    dfs_e.loc[lambda df_: df_.index.isin(gene_groups_e[gene_group]), 'Slope'],
+    histtype='step',
+    # bins=20
+)
+
+ax = axs[0,2]
+gene_group = 'init_factors'
+ax.hist(
+    dfs_e.loc[lambda df_: df_.index.isin(gene_groups_e[gene_group]), 'Slope'],
+    histtype='step',
+    # bins=20
+)
+
+gene_group = 'small_molecule_metabolism'
+ax = axs[0,3]
+ax.hist(
+    dfs_e.loc[lambda df_: df_.index.isin(gene_groups_e[gene_group]), 'Slope'],
+    histtype='step',
+    # bins=20
+)
+
+ax = axs[1,0]
+gene_group = 'ribosome'
+ax.hist(
+    dfs_8.loc[lambda df_: df_.index.isin(gene_groups_b[gene_group]), 'Slope'],
+    histtype='step',
+    # bins=20
+)
+ax = axs[1,1]
+gene_group = 'trna_synth'
+ax.hist(
+    dfs_8.loc[lambda df_: df_.index.isin(gene_groups_b[gene_group]), 'Slope'],
+    histtype='step',
+    # bins=20
+)
+ax = axs[1,2]
+gene_group = 'init_factors'
+ax.hist(
+    dfs_8.loc[lambda df_: df_.index.isin(gene_groups_b[gene_group]), 'Slope'],
+    histtype='step',
+    # bins=20
+)
+
+gene_group = 'small_molecule_metabolism'
+ax = axs[1,3]
+ax.hist(
+    dfs_8.loc[lambda df_: df_.index.isin(gene_groups_b[gene_group]), 'Slope'],
+    histtype='step',
+    # bins=20
+)
+
+for ax in axs.flatten():
+    ax.set_xlim(-1.6,1.6)
+# dfs_e.loc[lambda df_:df_.index.isin(gene_groups_e['trna_synth'])]['Slope'].hist()
+fig.tight_layout()
+
+#%%
+slope_analysis.make_slope_plot(
+    gene = 'accA',
+    df_pvalues = dfp_e,
+    df_slopes = dfs_e,
+    plot_metadata = plot_metadata,
+    ax = plt.gca(),
+    x_var = 'growth_rate',
+    y_var = 'length',
+    x_label_meta_column = 'title',
+    y_label_meta_column = 'title',
+)
+
+#%%
+
+fig, ax = plt.subplots(1,1, figsize=(1.3,1.3))
+slope_analysis.make_slope_plot(
+    gene = 'rpsO',
+    df_pvalues = dfp_b,
+    df_slopes = dfs_8,
+    plot_metadata = plot_metadata,
+    ax = ax,
+    x_var = 'growth_rate',
+    y_var = 'length',
+    # x_label_meta_column = 'title',
+    # y_label_meta_column = 'title',
+)
+# Annotate with the name of the gene and slope on the plot
+
+#%%
+fig, ax = plt.subplots(1,1, figsize=(1.3,1.3))
+slope_analysis.make_slope_plot(
+    gene = 'rpsO',
+    df_pvalues = dfp_e,
+    df_slopes = dfs_e,
+    plot_metadata = plot_metadata,
+    ax = ax,
+    x_var = 'growth_rate',
+    y_var = 'length',
+    xlim = E_COL_XLIM,
+    ylim = E_COL_YLIM,
+    yticks = E_COL_YTICKS,
+    # x_label_meta_column = 'title',
+    # y_label_meta_column = 'title',
+)
+
+#%% Now for B. subtilis
+plt.scatter(
+    x=dfp_b[plot_metadata.loc['growth_rate','col_name_steady_state']],
+    y=dfp_b[plot_metadata.loc['length','col_name_steady_state']],
+    s=1, alpha=0.1, color='gray'
+)
+plt.scatter(
+    x=dfp_b.loc[lambda df_: df_['Gene'].isin(genes_aa_b), plot_metadata.loc['growth_rate','col_name_steady_state']],
+    y=dfp_b.loc[lambda df_: df_['Gene'].isin(genes_aa_b), plot_metadata.loc['length','col_name_steady_state']],
+    s=5)
+
+#%%
 go_term = 'GO:0015934'  # large ribosomal subunit
 genes_large_ribosomal_subunit = go_enrichment_analysis.search_go(go_term)
 go_term = 'GO:0015935'  # small ribosomal subunit
