@@ -232,14 +232,24 @@ def get_all_genes_in_clustering_df(clustering_df:pd.DataFrame) -> list:
     )
 
 class GOEnrichmentAnalysis:
-    def __init__(self):
+    def __init__(
+        self,
+        is_bacillus=True,
+    ):
         obo_fname = download_go_basic_obo()
         self.obodag = GODag(obo_fname)
-        gaf_url = 'https://ftp.ebi.ac.uk/pub/databases/GO/goa/proteomes/6.B_subtilis_168.goa'
-        gaf_fname = './6.B_subtilis_168.goa'
+        if is_bacillus:
+            gaf_url='https://ftp.ebi.ac.uk/pub/databases/GO/goa/proteomes/6.B_subtilis_168.goa'
+            gaf_fname='./6.B_subtilis_168.goa'
+        else:
+            gaf_url="http://release.geneontology.org/2024-11-03/annotations/ecocyc.gaf.gz"
+            gaf_fname = "./ecocyc.gaf.gz"
 
         goatools.base.http_get(gaf_url, gaf_fname)
-        self.objanno = GafReader(gaf_fname)
+        if is_bacillus:
+            self.objanno = GafReader(gaf_fname)
+        else:
+            self.objanno = GafReader(goatools.base.gunzip(gaf_fname))
         self.ns2assoc = self.objanno.get_ns2assc()
 
         self.gene_to_id = {assoc.DB_Symbol:assoc.DB_ID for assoc in self.objanno.associations}
