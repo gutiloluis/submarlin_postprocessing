@@ -118,7 +118,7 @@ headpaths_merged = {
     'lLAG08': headpath / '2025-06-03_lLAG8-10_Merged-Analysis' / '2025-06-04_lLAG8_ExpNum-Fixed',
     'lLAG10': headpath / '2025-06-03_lLAG8-10_Merged-Analysis' / '2025-06-04_lLAG10_ExpNum-Fixed',
     'lDE20_pre': headpath / 'Ecoli/2023-01-18_lDE20_Merged_Analysis',
-    'lDE20': headpath / 'Ecoli/Eaton_2025_Data/lDE20_Imaging/Clustering',
+    'lDE20': headpath / 'Ecoli/Eaton_2025_Data/lDE20_Imaging',
     'merged_all': headpath / '2025-10-17_lLAG8-10_Merged',
 }
 
@@ -191,7 +191,7 @@ sgRNA_timeseries_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-08-11_sgRNA_Timeseries_df.pkl',
     'lLAG10': None, # TODO
     'lDE20_pre': headpaths_merged['lDE20_pre'] / '2023-01-23_sgRNA_Timeseries_df.pkl',
-    'lDE20': headpaths_merged['lDE20'] / '2023-01-23_sgRNA_Timeseries_df.pkl',
+    'lDE20': headpaths_merged['lDE20'] / 'Clustering'/ '2023-01-23_sgRNA_Timeseries_df.pkl',
     'merged_all': headpaths_merged['merged_all'] / 'sgRNA_Timeseries_df.pkl',
 }
 
@@ -269,7 +269,7 @@ clustering_df_large = {
     'lLAG08': headpaths_merged['lLAG08'] / prefixes_clustering_df['lLAG08'] / 'Pandas_Dataframe.pkl',
     'lLAG10': None, # TODO
     'lDE20_pre': headpaths_merged['lDE20_pre'] / prefixes_clustering_df['lDE20_pre'] / 'Pandas_Dataframe.pkl',
-    'lDE20': headpaths_merged['lDE20'] / prefixes_clustering_df['lDE20'] / 'Pandas_Dataframe.pkl',
+    'lDE20': headpaths_merged['lDE20'] / 'Clustering' / prefixes_clustering_df['lDE20'] / 'Pandas_Dataframe.pkl',
     'merged_all': headpaths_merged['merged_all'] / prefixes_clustering_df['merged_all'] / 'Pandas_Dataframe.pkl',
 }
 
@@ -278,7 +278,7 @@ anndata_nonRcompat = {
     'lLAG08': headpaths_merged['lLAG08'] / prefixes_clustering_df['lLAG08'] / 'AnnData_nonRcompat.h5ad',
     'lLAG10': None, # TODO,
     'lDE20_pre': headpaths_merged['lDE20_pre'] / prefixes_clustering_df['lDE20_pre'] / 'AnnData_nonRcompat.h5ad',
-    'lDE20': headpaths_merged['lDE20'] / prefixes_clustering_df['lDE20'] / 'AnnData_nonRcompat.h5ad',
+    'lDE20': headpaths_merged['lDE20'] / 'Clustering' / prefixes_clustering_df['lDE20'] / 'AnnData_nonRcompat.h5ad',
     'merged_all': headpaths_merged['merged_all'] / prefixes_clustering_df['merged_all'] / 'AnnData_nonRcompat.h5ad',
 }
 
@@ -354,6 +354,7 @@ df_bar_per_trench_filenames = {
 steady_state_estimator_pvalues_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_df_Estimators_wStats.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_df_Estimators_wStats.pkl',
+    'lDE20': headpaths_merged['lDE20'] / '2024-01-25_lDE20_Steady_State_df_Estimators_wStats.pkl',
 }
 
 steady_state_estimator_filtered_filenames = {
@@ -369,12 +370,15 @@ control_stats_filenames = {
 steady_state_estimator_pvalues_pivoted_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / 'lLAG8_Steady_State_df_Estimators_wStats_Pivoted.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / 'lLAG10_Steady_State_df_Estimators_wStats_Pivoted.pkl',
+    'merged_all': headpaths_merged['merged_all'] / 'Steady_State_df_Estimators_wStats_Pivoted.pkl',
+    'lDE20': headpaths_merged['lDE20'] / 'lDE20_Steady_State_df_Estimators_wStats_Pivoted.pkl',
 }
 
 # slopes
 steady_state_slopes_filenames = {
     'lLAG08': headpaths_merged['lLAG08'] / '2025-06-03_lLAG8_Steady_State_Growth_Length_Regressions.pkl',
     'lLAG10': headpaths_merged['lLAG10'] / '2025-06-03_lLAG10_Steady_State_Growth_Length_Regressions.pkl',
+    'lDE20': headpaths_merged['lDE20'] / 'Growth_Length_Slopes.csv',
 }
 ########################
 # Examples for visualization

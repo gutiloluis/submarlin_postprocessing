@@ -1,39 +1,29 @@
 #%%
+%load_ext autoreload
+%autoreload 2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import submarlin_postprocessing.filepaths as filepaths
 import submarlin_postprocessing.goanalysis as goanalysis
 import submarlin_postprocessing.slope_analysis as slope_analysis
+import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
 import submarlin_postprocessing.clustering_viz as clustering_viz
-
+#%%
 steady_state_slopes_filenames = filepaths.steady_state_slopes_filenames
-steady_state_estimator_pvalues_pivoted_filenames = filepaths.steady_state_estimator_pvalues_pivoted_filenames
+# steady_state_estimator_pvalues_pivoted_filenames = filepaths.steady_state_estimator_pvalues_pivoted_filenames
+steady_state_estimator_pvalues_filenames = filepaths.steady_state_estimator_pvalues_filenames
 control_stats_filenames = filepaths.control_stats_filenames
 
 plot_metadata = clustering_viz.initialize_plot_metadata()
 
+keys = ['lLAG08', 'lLAG10']
 steady_state_slopes_dfs = {
-    key: pd.read_pickle(filepath)
-    for key, filepath in steady_state_slopes_filenames.items()
+    key: pd.read_pickle(steady_state_slopes_filenames[key])
+    for key in keys
 }
 
-# control_stats_dfs = {
-#     key: (
-#         pd.read_pickle(filepath)
-#         # TODO Convert to hour and log2
-#     )
-#     for key, filepath in control_stats_filenames.items()
-# }
-
-steady_state_estimator_pvalues_pivoted_dfs = {
-    key: slope_analysis.load_and_process_pvalues_pivoted_df(
-        filepath=filepath,
-        plot_metadata=plot_metadata
-    )
-    for key, filepath in steady_state_estimator_pvalues_pivoted_filenames.items()
-}
-
+# SECONDS CONVERTED TO HOURS EVEN THOUGH COL NAME IS Delta time (s)
 min_points = 3
 ci_threshold = 0.5
 growth_thr = np.inf
@@ -41,12 +31,66 @@ growth_thr = np.inf
 df_8 = steady_state_slopes_dfs['lLAG08']
 df_10 = steady_state_slopes_dfs['lLAG10']
 
-dfp_8 = steady_state_estimator_pvalues_pivoted_dfs['lLAG08']
-dfp_10 = steady_state_estimator_pvalues_pivoted_dfs['lLAG10']
-#%% GO analysis
+
+#%% PIVOT E COLI PVALUES
+dfp_ecoli = pd.read_pickle(steady_state_estimator_pvalues_filenames['lDE20'])
+# dfp_ecoli
+
+#%%
+slope_analysis.load_format_and_save_ecoli_pvalues_df(
+    filepath = steady_state_estimator_pvalues_filenames['lDE20'],
+    plot_metadata = plot_metadata,
+    save_filepath = filepaths.steady_state_estimator_pvalues_pivoted_filenames['lDE20'],
+)
+#%%
+(
+    dfp_ecoli
+    .pipe(
+        steady_state_viz.pivot_pvalue_df,
+        index_name = 'oDEPool7_id',
+        cols_grnas=['EcoWG1_id', 'Gene', 
+                    'Category', 'N Observations'],
+    )
+    .pipe(
+        slope_analysis.format_pvalues_df_to_single_index,
+        index_grna='oDEPool7_id',
+    )
+    .pipe(
+        clustering_viz.adjust_growth_rate_base_e_to_2,
+        metadata = plot_metadata,
+        var_name = 'growth_rate',
+        metadata_col_name = 'col_name_steady_state'
+    )
+    .pipe(
+        clustering_viz.convert_seconds_to_hours,
+        metadata = plot_metadata,
+        var_name = 't_idiv',
+        metadata_col_name = 'col_name_steady_state'
+    )
+)
+
+#%%
+dfp = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['merged_all'])
+#%%
+# dfp_8_load = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['lLAG08'])
+# dfp_10_load = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['lLAG10'])
+
+#%%
+# var = 'Instantaneous Growth Rate: Volume'
+var = plot_metadata.loc['sep_disp','col_name_steady_state']
+# var = ''
+plt.scatter(
+    x=dfp[var],
+    y=-np.log10(dfp['FDR Merged: ' + var]),
+    s=1
+)
+
+# dfp.plot.scatter(x= 'Instantaneous Growth Rate: Volume', y = 'FDR Merged: Instantaneous Growth Rate: Volume')
+
+#%% BEFORE START: GO analysis
 go_enrichment_analysis = goanalysis.GOEnrichmentAnalysis()
 
-all_genes = dfp_8['Gene'].tolist() + dfp_10['Gene'].tolist()
+all_genes = dfp['Gene'].tolist()
 all_genes = list(set(all_genes))
 
 go_term = 'GO:0015934'  # large ribosomal subunit
@@ -96,7 +140,6 @@ slope_analysis.plot_histograms_of_slopes(
     subsets_labels=['Ribosomal proteins', 'Small molecule metabolism', 'tRNA aminoacylation'],
     subsets_colors=['tab:blue', 'tab:orange', 'tab:red']
 )
-
 #%%
 subset = (
     df_8

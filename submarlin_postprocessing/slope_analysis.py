@@ -1,6 +1,8 @@
 #%%
 import matplotlib.pyplot as plt
+import statsmodels.stats.multitest
 import submarlin_postprocessing.clustering_viz as clustering_viz
+import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
 import pandas as pd
 import numpy as np
 
@@ -20,15 +22,26 @@ def format_pvalues_df_to_single_index(df, index_grna='opLAG1_id'):
             .rename(columns=lambda col: 'Corrected P-Value: '+col),
             left_index=True, right_index=True
         )
+        .merge(
+            df
+            .set_index(index_grna)
+            .loc[:, 'P-Value']
+            .rename(columns=lambda col: 'P-Value: '+col),
+            left_index=True, right_index=True
+        )
     )
 
-def load_and_process_pvalues_pivoted_df(filepath, plot_metadata):
+def load_and_process_pvalues_pivoted_df(
+    filepath,
+    plot_metadata,
+    is_multi_index=True,
+):
     '''
     Load and process the p-values pivoted dataframe.
     '''
     df = (
         pd.read_pickle(filepath)
-        .pipe(format_pvalues_df_to_single_index)
+        .pipe(lambda df_: format_pvalues_df_to_single_index(df_, index_grna='opLAG1_id') if is_multi_index else df_)
         .pipe(
             clustering_viz.adjust_growth_rate_base_e_to_2,
             metadata = plot_metadata,
@@ -43,6 +56,149 @@ def load_and_process_pvalues_pivoted_df(filepath, plot_metadata):
         )
     )
     return df
+
+def modify_df_pvalues_for_merging(
+    dfp,
+    library_name,
+    id_offset=0,
+    id_name='opLAG1_id',
+    id_rename_to='opLAG1_id',
+    merged_id_name='opLAGm_id',
+):
+    # NOTE: P-values need to be fixed, multiple hypothesis correction not valid after merging
+    return (
+        dfp
+        .pipe(steady_state_viz.pivot_pvalue_df, index_name=id_name)
+        .pipe(format_pvalues_df_to_single_index, index_grna=id_name)
+        .reset_index()
+        .assign(library=library_name)
+        .astype({'library':'category'})
+        .assign(**{merged_id_name: lambda df_: df_[id_name]+id_offset})
+        .set_index(merged_id_name)
+        .rename(columns={id_name: id_rename_to})
+    )
+
+def load_process_and_merge_pvalues_dfs(
+    estimator_pvalues_dfs_filepaths: dict, # Not pivoted
+    save_filepath: str = None
+):
+
+    estimator_pvalues_dfs = {
+        key: pd.read_pickle(filepath)
+        for key, filepath in estimator_pvalues_dfs_filepaths.items()
+    }
+
+
+    df_merged = pd.concat([
+        estimator_pvalues_dfs['lLAG08'].pipe(
+            modify_df_pvalues_for_merging,
+            library_name='lLAG08',
+            id_offset=0,
+            id_name='opLAG1_id',
+            id_rename_to='opLAG1_id',
+            merged_id_name='opLAGm_id',
+        ),
+        estimator_pvalues_dfs['lLAG10'].pipe(
+            modify_df_pvalues_for_merging,
+            library_name='lLAG10',
+            id_offset=1000000,
+            id_name='opLAG1_id',
+            id_rename_to='opLAG2_id',
+            merged_id_name='opLAGm_id',
+        )
+    ])
+
+    if save_filepath:
+        df_merged.to_pickle(save_filepath)
+    return df_merged
+
+### USED:
+# load_process_and_merge_pvalues_dfs(
+#     estimator_pvalues_dfs_filepaths=steady_state_estimator_pvalues_filenames,
+#     save_filepath=filepaths.steady_state_estimator_pvalues_pivoted_filenames['merged_all'],
+# )
+
+def correct_pvalues_fdr_single_var(
+    dfp,
+    var_name,
+):
+    '''
+    Correct p-values for multiple hypothesis testing using FDR correction.
+    '''
+    col_name = f'P-Value: {var_name}'
+    mask_valid_pvals = ~dfp[col_name].isna()
+    pvals = dfp.loc[mask_valid_pvals, col_name].to_numpy()
+    rejected, pvals_corrected = statsmodels.stats.multitest.fdrcorrection(
+        pvals=pvals,
+        alpha=0.05,
+        method='indep',
+        is_sorted=False,
+    )
+
+    # Return a series with the corrected p-values
+    pvals_corrected_series = pd.Series(
+        data=np.nan,
+        index=dfp.index,
+        name=f'FDR Merged: {var_name}',
+    )
+    pvals_corrected_series.loc[mask_valid_pvals] = pvals_corrected
+    return pvals_corrected_series
+
+## USED:
+# dfp = load_and_process_pvalues_pivoted_df(
+#     filepath=filepaths.steady_state_estimator_pvalues_pivoted_filenames['merged_all'],
+#     plot_metadata=plot_metadata,
+#     is_multi_index=False,
+# )
+# var_names = plot_metadata['col_name_steady_state']
+# 'Corrected P-Value: ' + plot_metadata['col_name_steady_state']
+# for var_name in var_names:
+#     dfp['FDR Merged: ' + var_name] = correct_pvalues_fdr_single_var(
+#         dfp=dfp,
+#         var_name=var_name,
+#     )
+# dfp.to_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['merged_all'])
+
+def load_format_and_save_ecoli_pvalues_df(
+    filepath,
+    plot_metadata,
+    save_filepath=None,
+):
+    dfp_ecoli = (
+        pd.read_pickle(filepath)
+        .pipe(
+            steady_state_viz.pivot_pvalue_df,
+            index_name = 'oDEPool7_id',
+            cols_grnas=['EcoWG1_id', 'Gene', 
+                        'Category', 'N Observations'],
+        )
+        .pipe(
+            format_pvalues_df_to_single_index,
+            index_grna='oDEPool7_id',
+        )
+        .pipe(
+            clustering_viz.adjust_growth_rate_base_e_to_2,
+            metadata = plot_metadata,
+            var_name = 'growth_rate',
+            metadata_col_name = 'col_name_steady_state'
+        )
+        .pipe(
+            clustering_viz.convert_seconds_to_hours,
+            metadata = plot_metadata,
+            var_name = 't_idiv',
+            metadata_col_name = 'col_name_steady_state'
+        )
+    )
+    if save_filepath:
+        dfp_ecoli.to_pickle(save_filepath)
+    return dfp_ecoli
+
+## USED:
+# slope_analysis.load_format_and_save_ecoli_pvalues_df(
+#     filepath = steady_state_estimator_pvalues_filenames['lDE20'],
+#     plot_metadata = plot_metadata,
+#     save_filepath = filepaths.steady_state_estimator_pvalues_pivoted_filenames['lDE20'],
+# )
 
 #################
 # R^2 vs. Slope plot
@@ -108,6 +264,11 @@ def _get_and_plot_linear_fit(
     y_vals = 2**(intercept + slope * x_vals) # Convert back to original units
     ax.plot(x_vals, y_vals, color='red', linestyle='-', zorder=0)
     return slope
+
+# def make_length_vs_growth_plot(
+#     df_pvalues,
+
+# )
 
 def make_slope_plot(
     gene,
