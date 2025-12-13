@@ -10,3 +10,4 @@ __pycache__/
 # Ignore GO files
 *.goa
 *.obo
+*.gaf
