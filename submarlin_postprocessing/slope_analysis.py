@@ -240,14 +240,18 @@ def plot_length_growth_scatter(
     dfp,
     gene_groups,
     plot_metadata,
+    ax,
+    which_gene_groups=None,
     x_lim=(0, 1.8),
     y_lim=(1.8, 12),
     yticks = [2, 4, 8],
+    alpha=1,
+    size=2,
+    show_edge = False,
 ):
     '''
     Plot length vs. growth rate scatter plot for different gene groups.
     '''
-    plt.figure(figsize=(2.3, 2.3))
     # plt.scatter(
     #     x=dfp[plot_metadata['col_name_steady_state']['growth_rate']],
     #     y=dfp[plot_metadata['col_name_steady_state']['length']],
@@ -257,33 +261,38 @@ def plot_length_growth_scatter(
     #     label='All genes',
     # )
     colors = {
-        'ribosome': 'tab:blue',
-        'metabolism': 'tab:orange',
-        'trna_synth': 'tab:green',
-        'init_factors': 'tab:red',
+        'ribosome': 'C0',
+        'small_molecule_metabolism': 'C4',
+        'trna_synth': 'C1',
+        'init_factors': 'C3',
     }
+    if which_gene_groups is None:
+        which_gene_groups = gene_groups.keys()
     for group_name, genes in gene_groups.items():
+        if group_name not in which_gene_groups:
+            continue
         dfp_subset = dfp.loc[dfp['Gene'].isin(genes)]
-        plt.scatter(
+        ax.scatter(
             x=dfp_subset[plot_metadata['col_name_steady_state']['growth_rate']],
             y=dfp_subset[plot_metadata['col_name_steady_state']['length']],
-            color=colors[group_name],
-            alpha=0.7,
+            color=colors[group_name] if group_name in colors else 'black',
+            alpha=alpha,
             label=group_name,
-            # edgecolor='black',
-            s=2,
+            # edgecolor='black' if show_edge else 'none',
+            s=size,
         )
-    plt.xscale('linear')
-    plt.yscale('log', base=2)
-    plt.xlabel('Growth rate (1/hr)')
-    plt.ylabel('Cell length (µm)')
+    ax.set_xscale('linear')
+    ax.set_yscale('log', base=2)
+    ax.set_xlabel('Growth rate (1/hr)')
+    ax.set_ylabel('Cell length (µm)')
     # plt.title('Cell length vs. Growth rate by Gene Group')
     # plt.legend()
     # plt.grid(False)
-    plt.ylim(*y_lim)
-    plt.xlim(*x_lim)
+    ax.set_ylim(*y_lim)
+    ax.set_xlim(*x_lim)
     yticks = yticks
-    plt.yticks(yticks, [str(y) for y in yticks])
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([str(y) for y in yticks])
     # plt.axhline(y=4, color='black', linestyle='--', linewidth=1)
     # plt.tight_layout()
 
@@ -338,9 +347,10 @@ def _get_and_plot_linear_fit(
     else:
         slope = df_slopes.loc[gene, 'Slope']
         intercept = df_slopes.loc[gene, 'Intercept']
-    x_vals = np.array([0.2443, 1.5612])
+    # x_vals = np.array([0.2443, 1.5612])
+    x_vals = np.array([0, 2])
     y_vals = 2**(intercept + slope * x_vals) # Convert back to original units
-    ax.plot(x_vals, y_vals, color='red', linestyle='-', zorder=0)
+    ax.plot(x_vals, y_vals, color='black', linestyle='-', zorder=0)
     return slope
 
 # def make_length_vs_growth_plot(
@@ -359,8 +369,11 @@ def make_slope_plot(
     x_label_meta_column='title',
     y_label_meta_column='title',
     xlim=(0.4, 1.5),
-    ylim=(2.4, 7),
-    yticks=[3,4,5,6,7],
+    ylim=(2.2, 6.5),
+    yticks=[3,4,5,6],
+    alpha=0.1,
+    show_y_label=True,
+    color='tab:blue'
 ):
     '''
     Make a slope plot for a given gene.
@@ -380,10 +393,10 @@ def make_slope_plot(
 
     df_pvalues.plot.scatter(
         x=x_col, y=y_col, s=2,
-        ax=ax, color='gray', alpha=0.1, zorder=-1)
+        ax=ax, color='gray', alpha=alpha, zorder=-1)
     df_gene.plot.scatter(
         x=x_col, y=y_col,
-        color = 'tab:blue', edgecolor='black', s=30,
+        color = color, edgecolor='black', s=20,
         ax=ax, xlabel=x_label, ylabel=y_label)
 
     slope = _get_and_plot_linear_fit(
@@ -401,22 +414,417 @@ def make_slope_plot(
     ax.set_yticklabels([str(y) for y in yticks])
 
     ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    if show_y_label:
+        ax.set_ylabel(y_label)
+    else:
+        ax.set_ylabel('')
 
     ax.annotate(
-        f'{gene}\nSlope: {slope:.2f}' if slope is not None else f'{gene}\nSlope: N/A',
+        # f'{gene}\nSlope: {slope:.2f}' if slope is not None else f'{gene}\nSlope: N/A',
+        f'{gene}\n{slope:.2f}' if slope is not None else f'{gene}\nN/A',
         xy=(0.95, 0.95),
         xycoords='axes fraction',
         ha='right',
         va='top',
-        fontsize=7,
+        fontsize=6.5,
     )
 
     # if slope is not None:
     #     ax.set_title(f'{gene}, Slope: {slope:.2f}', fontsize=12)
     # else:
     #     ax.set_title(f'{gene}, Slope: N/A', fontsize=12)
-        
+
+E_COL_XLIM = (0,1.8)
+E_COL_YLIM = (1.8,12)
+E_COL_YTICKS = [2,4,8]
+E_COL_ALPHA = 0.02
+B_SUB_XLIM = (0.4,1.5)
+B_SUB_YLIM = (2.4,6.5)
+B_SUB_YTICKS = [3,4,6]
+
+def plot_length_growth_scatter_ecoli(
+    dfp,
+    gene_groups,
+    plot_metadata,
+    ax,
+):
+    plot_length_growth_scatter(
+        dfp, gene_groups, plot_metadata, 
+        ax=ax,
+        which_gene_groups=[
+            'ribosome',
+            # 'trna_synth',
+            # 'init_factors',
+            # 'small_molecule_metabolism'
+        ],
+        x_lim=E_COL_XLIM,
+        y_lim=E_COL_YLIM,
+        yticks=E_COL_YTICKS,
+        alpha=0.5,
+    )
+
+
+    plot_length_growth_scatter(
+        dfp, gene_groups, plot_metadata, 
+        ax=ax,
+        which_gene_groups=[
+            # 'ribosome',
+            # 'trna_synth',
+            # 'init_factors',
+            'small_molecule_metabolism'
+        ],
+        x_lim=E_COL_XLIM,
+        y_lim=E_COL_YLIM,
+        yticks=E_COL_YTICKS,
+        alpha=0.3,
+    )
+
+    plot_length_growth_scatter(
+        dfp, gene_groups, plot_metadata, 
+        ax=ax,
+        which_gene_groups=[
+            # 'ribosome',
+            'trna_synth',
+            # 'init_factors',
+            # 'small_molecule_metabolism'
+        ],
+        x_lim=E_COL_XLIM,
+        y_lim=E_COL_YLIM,
+        yticks=E_COL_YTICKS,
+        alpha=0.35,
+    )
+
+    plot_length_growth_scatter(
+        dfp, gene_groups, plot_metadata, 
+        ax=ax,
+        which_gene_groups=[
+            # 'ribosome',
+            # 'trna_synth',
+            'init_factors',
+            # 'small_molecule_metabolism'
+        ],
+        x_lim=E_COL_XLIM,
+        y_lim=E_COL_YLIM,
+        yticks=E_COL_YTICKS,
+        alpha=1,
+        size=5,
+    )
+    ax.annotate(
+        'E. coli\n30°C\nEZ-rich medium',
+        xy=(0.95, 0.95),
+        xycoords='axes fraction',
+        ha='right',
+        va='top',
+        fontsize=7,
+        # bold
+        fontweight='bold'
+    )
+
+def plot_length_growth_scatter_bsubtilis(
+    dfp,
+    gene_groups,
+    plot_metadata,
+    ax,
+):
+    plot_length_growth_scatter(
+        dfp, gene_groups, plot_metadata, 
+        ax=ax,
+        which_gene_groups=[
+            'ribosome',
+            # 'trna_synth',
+            # 'init_factors',
+            # 'small_molecule_metabolism'
+        ],
+        x_lim=B_SUB_XLIM,
+        y_lim=B_SUB_YLIM,
+        yticks=B_SUB_YTICKS,
+        alpha=0.5,
+        size=3
+    )
+
+    plot_length_growth_scatter(
+        dfp, gene_groups, plot_metadata, 
+        ax=ax,
+        which_gene_groups=[
+            # 'ribosome',
+            # 'trna_synth',
+            # 'init_factors',
+            'small_molecule_metabolism'
+        ],
+        x_lim=B_SUB_XLIM,
+        y_lim=B_SUB_YLIM,
+        yticks=B_SUB_YTICKS,
+        alpha=0.5,
+        size=3,
+    )
+
+    plot_length_growth_scatter(
+        dfp, gene_groups, plot_metadata, 
+        ax=ax,
+        which_gene_groups=[
+            # 'ribosome',
+            'trna_synth',
+            # 'init_factors',
+            # 'small_molecule_metabolism'
+        ],
+        x_lim=B_SUB_XLIM,
+        y_lim=B_SUB_YLIM,
+        yticks=B_SUB_YTICKS,
+        alpha=1,
+        size=8,
+    )
+
+    plot_length_growth_scatter(
+        dfp, gene_groups, plot_metadata, 
+        ax=ax,
+        which_gene_groups=[
+            # 'ribosome',
+            # 'trna_synth',
+            'init_factors',
+            # 'small_molecule_metabolism'
+        ],
+        x_lim=B_SUB_XLIM,
+        y_lim=B_SUB_YLIM,
+        yticks=B_SUB_YTICKS,
+        alpha=1,
+        size=8,
+    )
+
+    ax.annotate(
+        'B. subtilis\n37°C\nMOPS-Glucose medium',
+        xy=(0.95, 0.95),
+        xycoords='axes fraction',
+        ha='right',
+        va='top',
+        fontsize=7,
+        fontweight='bold'
+    )
+
+def plot_mosaic_eco_bsub_comparison(
+    dfp_e,
+    dfp_b,
+    dfs_e,
+    dfs_8,
+    gene_groups_e,
+    gene_groups_b,
+    plot_metadata,
+):
+    mosaic = [
+        ['B', 'B', 'B_ribo_hist', 'B_trna_hist', 'B_init_hist', 'B_small_hist'],
+        ['B', 'B', 'B_ribo_slope', 'B_trna_slope', 'B_init_slope', 'B_small_slope'],
+        ['E', 'E', 'E_ribo_hist', 'E_trna_hist', 'E_init_hist', 'E_small_hist'],
+        ['E', 'E', 'E_ribo_slope', 'E_trna_slope', 'E_init_slope', 'E_small_slope'],
+    ]
+
+    fig, axs = plt.subplot_mosaic(mosaic, figsize=(7.2,4))
+
+    ax = axs['B']
+    plot_length_growth_scatter_bsubtilis(
+        dfp=dfp_b,
+        gene_groups=gene_groups_b,
+        plot_metadata=plot_metadata,
+        ax=ax,
+    )
+    ax=axs['E']
+    plot_length_growth_scatter_ecoli(
+        dfp=dfp_e,
+        gene_groups=gene_groups_e,
+        plot_metadata=plot_metadata,
+        ax=ax,
+    )
+
+    ax=axs['B_ribo_hist']
+    gene_group = 'ribosome'
+    color='C0'
+    ax.hist(
+        dfs_8.loc[lambda df_: df_.index.isin(gene_groups_b[gene_group]), 'Slope'],
+        histtype='step', color=color,
+    )
+
+    ax=axs['B_ribo_slope']
+    make_slope_plot(
+        gene = 'rpmC',#'pyk',#'ileS',#'rpmC',
+        df_pvalues = dfp_b,
+        df_slopes = dfs_8,
+        plot_metadata = plot_metadata,
+        ax = ax,
+        x_var = 'growth_rate',
+        y_var = 'length',
+        color=color,
+    )
+    ax=axs['E_ribo_hist']
+    ax.hist(
+        dfs_e.loc[lambda df_: df_.index.isin(gene_groups_e[gene_group]), 'Slope'],
+        histtype='step',
+    )
+    ax=axs['E_ribo_slope']
+    make_slope_plot(
+        gene = 'rpmJ',
+        df_pvalues = dfp_e,
+        df_slopes = dfs_e,
+        plot_metadata = plot_metadata,
+        ax = ax,
+        x_var = 'growth_rate',
+        y_var = 'length',
+        xlim = E_COL_XLIM,
+        ylim = E_COL_YLIM,
+        yticks = E_COL_YTICKS,
+        alpha=E_COL_ALPHA,
+        color=color
+    )
+
+    ax=axs['B_trna_hist']
+    gene_group = 'trna_synth'
+    color='C1'
+    ax.hist(
+        dfs_8.loc[lambda df_: df_.index.isin(gene_groups_b[gene_group]), 'Slope'],
+        histtype='step',
+        color=color,
+    )
+    ax=axs['B_trna_slope']
+    make_slope_plot(
+        gene = 'ileS',#'pyk',#'ileS',#'rpmC',
+        df_pvalues = dfp_b,
+        df_slopes = dfs_8,
+        plot_metadata = plot_metadata,
+        ax = ax,
+        x_var = 'growth_rate',
+        y_var = 'length',
+        color=color,
+    )
+    ax=axs['E_trna_hist']
+    ax.hist(
+        dfs_e.loc[lambda df_: df_.index.isin(gene_groups_e[gene_group]), 'Slope'],
+        histtype='step',
+        color=color,
+    )
+    ax=axs['E_trna_slope']
+    make_slope_plot(
+        gene = 'trpS',
+        df_pvalues = dfp_e,
+        df_slopes = dfs_e,
+        plot_metadata = plot_metadata,
+        ax = ax,
+        x_var = 'growth_rate',
+        y_var = 'length',
+        xlim = E_COL_XLIM,
+        ylim = E_COL_YLIM,
+        yticks = E_COL_YTICKS,
+        alpha=E_COL_ALPHA,
+        color=color,
+    )
+
+    ax=axs['B_init_hist']
+    gene_group = 'init_factors'
+    color='C3'
+    ax.hist(
+        dfs_8.loc[lambda df_: df_.index.isin(gene_groups_b[gene_group]), 'Slope'],
+        histtype='step',
+        color=color,
+    )
+
+    ax=axs['B_init_slope']
+    make_slope_plot(
+        gene = 'infA',
+        df_pvalues = dfp_b,
+        df_slopes = dfs_8,
+        plot_metadata = plot_metadata,
+        ax = ax,
+        x_var = 'growth_rate',
+        y_var = 'length',
+        color=color,
+    )
+
+    ax=axs['E_init_hist']
+    ax.hist(
+        dfs_e.loc[lambda df_: df_.index.isin(gene_groups_e[gene_group]), 'Slope'],
+        histtype='step',
+        color=color,
+    )
+
+    ax=axs['E_init_slope']
+    make_slope_plot(
+        gene = 'infA',
+        df_pvalues = dfp_e,
+        df_slopes = dfs_e,
+        plot_metadata = plot_metadata,
+        ax = ax,
+        x_var = 'growth_rate',
+        y_var = 'length',
+        xlim = E_COL_XLIM,
+        ylim = E_COL_YLIM,
+        yticks = E_COL_YTICKS,
+        alpha=E_COL_ALPHA,
+        color=color
+    )
+
+    ax=axs['B_small_hist']
+    gene_group = 'small_molecule_metabolism'
+    color='C4'
+    ax.hist(
+        dfs_8.loc[lambda df_: df_.index.isin(gene_groups_b[gene_group]), 'Slope'],
+        histtype='step',
+        color=color,
+    )
+
+    ax=axs['B_small_slope']
+    make_slope_plot(
+        gene = 'icd',
+        df_pvalues = dfp_b,
+        df_slopes = dfs_8,
+        plot_metadata = plot_metadata,
+        ax = ax,
+        x_var = 'growth_rate',
+        y_var = 'length',
+        color=color,
+    )
+
+    ax=axs['E_small_hist']
+    ax.hist(
+        dfs_e.loc[lambda df_: df_.index.isin(gene_groups_e[gene_group]), 'Slope'],
+        histtype='step',
+        color=color,
+    )
+
+    ax=axs['E_small_slope']
+    make_slope_plot(
+        gene = 'pgk',
+        df_pvalues = dfp_e,
+        df_slopes = dfs_e,
+        plot_metadata = plot_metadata,
+        ax = ax,
+        x_var = 'growth_rate',
+        y_var = 'length',
+        xlim = E_COL_XLIM,
+        ylim = E_COL_YLIM,
+        yticks = E_COL_YTICKS,
+        alpha=E_COL_ALPHA,
+        color=color
+    )
+
+    fig.tight_layout()
+
+    axs['B_ribo_hist'].set_title('Ribosome', color='C0')
+    axs['B_trna_hist'].set_title('tRNA Synthetases', color='C1')
+    axs['B_init_hist'].set_title('Initiation Factors', color='C3')
+    axs['B_small_hist'].set_title('Small Molecule Metabolism', color='C4')
+
+    for ax_key in axs.keys():
+        ax = axs[ax_key]
+        if 'hist' in ax_key:
+            ax.set_xlim(-1.5,1.5)
+            ax.set_xlabel('Slope')
+            if 'ribo' in ax_key:
+                ax.set_ylabel('# Genes')
+            else:
+                ax.set_ylabel('')
+        if 'slope' in ax_key:
+            ax.set_xlabel('Growth Rate (1/hr)')
+            if 'ribo' in ax_key:
+                ax.set_ylabel('Length ($\mu$m)')
+            else:
+                ax.set_ylabel('')
+
 def make_grid_slope_plots(
     df_pvalues,
     df_slopes,
