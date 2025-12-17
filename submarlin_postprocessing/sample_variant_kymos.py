@@ -418,7 +418,7 @@ def show_last_timepoints(
     ax.set_title(title)
     ax.imshow(imgs, cmap='gray')
     ax.axis('off')
-    
+
 #############################################################
 ## Functions to make speficific figures for the manuscript
 #############################################################
@@ -820,6 +820,55 @@ def show_examples_final_timepoints(
         pad_inches=0,
         dpi=600
     )
+
+def show_last_timepoints_figure(
+    exp_key: str,
+    gene: str,
+    variant_id: int,
+    metadata_dfs: dict,
+    save_figure: bool = False,
+    show_scale: bool = False,
+    title: str | None = None,
+):
+    scale_kwargs = {
+        'fixed_value': 5,
+        'width_fraction': 0.04,
+        'location': 'lower right',
+        'color': 'white',
+        'scale_loc': 'none',
+        'border_pad': 0.5,
+        # 'scale_linewidth': 5,
+        # 'rotation': 'vertical-only',
+        'font_properties': {'size': 10, 'weight': 'bold', 'family': 'sans-serif'},
+    }
+
+    border_trim_top = 12
+    border_trim_bottom = 60
+
+    fig, ax = plt.subplots(1,1, figsize=(1.5, 2))
+    indices_last_t = filepaths.indices_last_t[exp_key][gene][variant_id]
+    metadata_var = metadata_dfs[exp_key].loc[indices_last_t]
+    show_last_timepoints(
+        metadata=metadata_var,
+        key_experiment_numbers_after_merge_to_key=filepaths.experiment_numbers_after_merge_to_key,
+        kymograph_paths=filepaths.kymograph_paths,
+        pad_width=2,
+        title=title,
+        ax=ax,
+        border_trim_top=border_trim_top,
+        border_trim_bottom=border_trim_bottom,
+        show_scale=show_scale,
+        scale_kwargs=scale_kwargs,
+    )
+    if save_figure:
+        fig.savefig(
+            filepaths.figures_savepath / 'last_timepoints_examples' / f'{gene}_{variant_id}_last_t.png',
+            transparent=True,
+            bbox_inches='tight',
+            pad_inches=0,
+            dpi=600
+        )
+
 
 def load_metadata_dfs(exp_groups:list) -> dict:
     '''
