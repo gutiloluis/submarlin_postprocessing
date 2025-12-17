@@ -1,11 +1,13 @@
 #%%
+%load_ext autoreload
+%autoreload 2
+import submarlin_postprocessing.clustering_viz as clustering_viz
 import submarlin_postprocessing.filepaths as filepaths
 import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import numpy as np
-
 plt.style.use('steady_state.mplstyle')
 
 ############################################################
@@ -32,11 +34,7 @@ dfs = {key: steady_state_viz.load_and_pivot_all_steady_state_dfs(
 ############################################################
 ## Figure 2
 ############################################################
-#%% Histograms
-%load_ext autoreload
-%autoreload 2
-import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
-plt.style.use('steady_state.mplstyle')
+# Histograms
 long_label = filepaths.long_labels
 # Show all variables histograms (2x2 grid of plots)
 steady_state_viz.show_all_variables_histograms(
@@ -56,6 +54,174 @@ steady_state_viz.plot_mismatch_panels_multiple_genes(
 ############################################################
 ## Load data with p-value
 ############################################################
+dfp_e = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['lDE20'])
+dfp_b = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['merged_all'])
+plot_metadata = clustering_viz.initialize_plot_metadata()
+df_control_stats = steady_state_viz.generate_control_stats_df(
+    dfp=dfp_b,
+    columns_to_process=plot_metadata['col_name_steady_state'].values.tolist(),
+    # save_filenames=filepaths.control_stats_filenames['merged_all'],
+)
+dfp_b = steady_state_viz.compute_nlog10_fdr(dfp_b, plot_metadata)
+
+#%%
+fig, ax = plt.subplots(1,1, figsize=(2.35,2.35))
+gene_list_to_highlight = filepaths.genes_divisome
+var_id = 'length'
+steady_state_viz.show_volcano_plot(
+    dfp = dfp_b, #p-values df
+    gene_list_to_highlight=gene_list_to_highlight,
+    df_control_stats = df_control_stats,
+    plot_metadata = plot_metadata,
+    var_id = var_id,
+    ax = ax,
+    color_highlight='C2',
+)
+fig.savefig(filepaths.figures_savepath / 'volcano_plots' / f'{var_id}_divisome_volcano.png', transparent=True, pad_inches=0, bbox_inches='tight', dpi=500)
+#%%
+factor = 2/3
+fig, ax = plt.subplots(1,1, figsize=(2.35*factor,2.35*factor))
+gene_list_to_highlight = filepaths.genes_replication
+steady_state_viz.show_volcano_plot(
+    dfp = dfp_b, #p-values df
+    gene_list_to_highlight=gene_list_to_highlight,
+    df_control_stats = df_control_stats,
+    plot_metadata = plot_metadata,
+    var_id = 'length',
+    ax = ax,
+    color_highlight='C4',
+)
+#%%
+fig, ax = plt.subplots(1,1, figsize=(2.35,2.35))
+var_id = 'width'
+gene_list_to_highlight = filepaths.genes_cell_wall_precursors
+steady_state_viz.show_volcano_plot(
+    dfp = dfp_b, #p-values df
+    gene_list_to_highlight=gene_list_to_highlight,
+    df_control_stats = df_control_stats,
+    plot_metadata = plot_metadata,
+    var_id = var_id,
+    ax = ax,
+    color_highlight='C2',
+)
+fig.savefig(filepaths.figures_savepath / 'volcano_plots' / f'{var_id}_cell_wall_precursors_volcano.png', transparent=True, pad_inches=0, bbox_inches='tight', dpi=500)
+#%%
+factor = 1
+fig, ax = plt.subplots(1,1, figsize=(2.35*factor,2.35*factor))
+var_id = 'sep_disp'
+gene_list_to_highlight = filepaths.genes_segregation
+steady_state_viz.show_volcano_plot(
+    dfp = dfp_b, #p-values df
+    gene_list_to_highlight=gene_list_to_highlight,
+    df_control_stats = df_control_stats,
+    plot_metadata = plot_metadata,
+    var_id = 'sep_disp',
+    ax = ax,
+    color_highlight='C2',
+)
+fig.savefig(filepaths.figures_savepath / 'volcano_plots' / f'{var_id}_segregation_volcano.png', transparent=True, pad_inches=0, bbox_inches='tight', dpi=500)
+#%%
+gene_list_to_highlight = []
+fig, ax = plt.subplots(1,1, figsize=(3,3))
+steady_state_viz.show_volcano_plot(
+    dfp = dfp_b, #p-values df
+    gene_list_to_highlight=gene_list_to_highlight,
+    df_control_stats = df_control_stats,
+    plot_metadata = plot_metadata,
+    var_id = 'intensity',
+    ax = ax,
+)
+
+#%%
+gene_list_to_highlight = filepaths.genes_segregation
+fig, ax = plt.subplots(1,1, figsize=(3,3))
+steady_state_viz.show_volcano_plot(
+    dfp = dfp_b, #p-values df
+    gene_list_to_highlight=gene_list_to_highlight,
+    df_control_stats = df_control_stats,
+    plot_metadata = plot_metadata,
+    var_id = 'growth_rate',
+    ax = ax,
+)
+
+
+#%% growth_rate increased
+var = plot_metadata.loc['growth_rate','col_name_steady_state']
+cols = [
+    'Gene', var, 'nlog10_fdr: ' + var, 'FDR Merged: ' + var,
+    'N Observations', 'opLAG1_id', 'opLAG2_id', 'Category']
+(dfp_b
+    .loc[
+        lambda df_: (df_[var] > 1.36)
+    , cols]
+    .sort_values(by=[var], ascending=False)
+)
+#%%
+df_control_stats
+#%% sep_disp
+var = plot_metadata.loc['sep_disp','col_name_steady_state']
+cols = [
+    'Gene', var, 'nlog10_fdr: ' + var, 'FDR Merged: ' + var,
+    'N Observations', 'opLAG1_id', 'opLAG2_id', 'Category']
+(dfp_b
+    .loc[lambda df_:df_['Category'] == 'control', var]
+)
+#%% Length
+var = plot_metadata.loc['length','col_name_steady_state']
+cols = [
+    'Gene', var, 'nlog10_fdr: ' + var, 'FDR Merged: ' + var,
+    'N Observations', 'opLAG1_id', 'opLAG2_id', 'Category']
+
+(dfp_b
+    .loc[
+        lambda df_: (df_['nlog10_fdr: ' + var] > 3.4) &
+        (df_[var] > df_control_stats.loc['mean_plus_3std', var]) &
+        # (df_[var] < df_control_stats.loc['mean_minus_3std', var]) &
+        ~df_['Gene'].isin(filepaths.genes_divisome) &
+        ~df_['Gene'].str.contains('|'.join(['rpl', 'rps', 'rpm', 'inf', 'fus', 'dna'])) &
+        ~df_['Gene'].isin(filepaths.genes_fla_che)
+        , cols]
+    .sort_values(by=['nlog10_fdr: ' + var, var], ascending=False)
+    # .loc[lambda df_: df_['Gene'] =='yabR', :]
+    # .loc[lambda df_: df_['Gene'].str.contains('mrp'), :]
+    # .tail(60)
+)
+#%% Width
+var = plot_metadata.loc['width','col_name_steady_state']
+cols = [
+    'Gene', var, 'nlog10_fdr: ' + var, 'FDR Merged: ' + var,
+    'N Observations', 'opLAG1_id', 'opLAG2_id', 'Category']
+
+(dfp_b
+    .loc[
+        lambda df_: (df_['nlog10_fdr: ' + var] > 2.5) &
+        (df_[var] > df_control_stats.loc['mean_plus_3std', var]) #&
+        , cols]
+    .sort_values(by=['nlog10_fdr: ' + var, var], ascending=False)
+    .head(60)
+)
+#%% sep_disp
+var = plot_metadata.loc['sep_disp','col_name_steady_state']
+cols = [
+    'Gene', var, 'nlog10_fdr: ' + var, 'FDR Merged: ' + var,
+    'N Observations', 'opLAG1_id', 'opLAG2_id', 'Category']
+
+(dfp_b
+    .loc[
+        lambda df_: (df_['nlog10_fdr: ' + var] > 2.5) &
+        (df_[var] > df_control_stats.loc['mean_plus_3std', var]) #&
+        , cols]
+    .sort_values(by=['nlog10_fdr: ' + var, var], ascending=False)
+    .head(60)
+)
+
+#%%
+df_control_stats
+
+#%% BEFORE MERGING lLAG8 and lLAG10
+############################################################
+## Load data with p-value
+############################################################
 column_names = filepaths.column_names_no_est
 # short_label = filepaths.short_labels
 long_label = filepaths.long_labels_no_est
@@ -69,7 +235,7 @@ dfs_stats = {
 dfs_controls_stats = {key: pd.read_pickle(
     filepaths.control_stats_filenames[key]
     ) for key in exp_groups}
-    
+ 
 for exp in exp_groups:
     for key in column_names.keys():
         dfs_stats[exp][('nlog10pval', column_names[key])] = dfs_stats[exp][('Corrected P-Value', column_names[key])].apply(lambda x: -np.log10(x) if x > 0 else 0)

@@ -181,6 +181,38 @@ def get_condensed_barcode_df_per_trench(
 # )
 # dask_controller.shutdown()
 
+def generate_control_stats_df(
+    dfp: pd.DataFrame, # p-values df
+    columns_to_process: list[str],
+):
+    return (
+        dfp.loc[
+            lambda df_: df_['Category'] == 'control',
+            columns_to_process]
+        .agg(['mean', 'std'])
+        .transpose()
+        .assign(**{
+            '2std': lambda df_: df_['std'] * 2,
+            '3std': lambda df_: df_['std'] * 3,
+        })
+        .assign(**{
+            'mean_plus_2std': lambda df_: df_['mean'] + df_['2std'],
+            'mean_plus_3std': lambda df_: df_['mean'] + df_['3std'],
+            'mean_minus_2std': lambda df_: df_['mean'] - df_['2std'],
+            'mean_minus_3std': lambda df_: df_['mean'] - df_['3std'],
+        })
+        .transpose()
+    )
+
+def compute_nlog10_fdr(
+    dfp: pd.DataFrame,
+    plot_metadata: dict,
+):
+    for var in plot_metadata['col_name_steady_state']:
+        dfp = dfp.assign(**{
+            'nlog10_fdr: ' + var: -np.log10(dfp['FDR Merged: ' + var])
+        })
+    return dfp
 
 ############################################################
 ## Functions for plotting
@@ -420,7 +452,64 @@ def bivariate_plot_with_subsets(
     )
     bivariate_plot(df=df_controls, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_controls, alpha=0.5, s=2, **kwargs)
 
+
+
+###############
+# Volcano Plots
+###############
 def show_volcano_plot(
+    dfp, #p-values df
+    gene_list_to_highlight: list[str],
+    df_control_stats,
+    plot_metadata: pd.DataFrame,
+    var_id,
+    ax,
+    color_highlight: str = 'C0',
+):
+    var = plot_metadata.loc[var_id,'col_name_steady_state']
+    # var = ''
+    ax.scatter(
+        x=dfp[var],
+        y=dfp['nlog10_fdr: ' + var],
+        s=5,
+        color='gray',
+        alpha=0.4,
+    )
+    
+    if len(gene_list_to_highlight) > 0:
+        ax.scatter(
+            x = dfp.loc[lambda df_: df_['Gene'].isin(gene_list_to_highlight), var],
+            y = dfp.loc[lambda df_: df_['Gene'].isin(gene_list_to_highlight), 'nlog10_fdr: ' + var],
+
+            s=25,
+            color=color_highlight,
+            alpha=0.7,
+            edgecolor='black',
+        )
+
+    ax.scatter(
+        x = dfp.loc[lambda df_: df_['Category'] == 'control', var],
+        y = dfp.loc[lambda df_: df_['Category'] == 'control', 'nlog10_fdr: ' + var],
+        s=5,
+        color='black',
+        alpha=0.4,
+    )
+    
+
+    # Draw vertical line at plus minus 3 stds
+    ax.axvline(x = df_control_stats.loc['mean_plus_3std', var] , linestyle='--', color='black')
+    ax.axvline(x = df_control_stats.loc['mean_minus_3std', var] , linestyle='--', color='black')
+
+    # Draw horizontal line at p-value = 0.05
+    ax.axhline(y = -np.log10(0.05), linestyle='--', color='black')
+    # plt.xlim([2,4])
+    ax.set_xlabel(plot_metadata.loc[var_id, 'title'])
+    ax.set_ylabel('$-\log_{10}(\mathrm{FDR})$')
+    
+
+
+#### BEFORE SWITCHING FROM MULTI-INDEX TO SINGLE-INDEX COLUMNS
+def show_volcano_plot_old_v2(
     df_stats: pd.DataFrame,
     var: str,
     ax,
