@@ -434,7 +434,7 @@ def bivariate_plot_with_subsets(
     **kwargs
 ):
     bivariate_plot(df=df, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_all, s=2, alpha=0.5,**kwargs)
-    bivariate_plot(df=df_subset, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_subset, s=5, alpha=1, **kwargs)
+    bivariate_plot(df=df_subset, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_subset, s=25, alpha=0.7, edgecolor='black', **kwargs)
     texts = []
     for _, row in df_annotate.iterrows():
         texts.append(
@@ -507,6 +507,133 @@ def show_volcano_plot(
     ax.set_ylabel('$-\log_{10}(\mathrm{FDR})$')
     
 
+##########################
+# Volcano + Bivariate plots
+##########################
+def show_volcano_and_bivariate_plots(
+    df: pd.DataFrame,
+    df_control_stats: pd.DataFrame,
+    plot_metadata: pd.DataFrame,
+):
+    mosaic = [
+        ['v_length', 'v_sep_disp', 'v_width'],
+        ['b_length', 'b_sep_disp', 'b_width'],
+    ]
+
+    fig, axs = plt.subplot_mosaic(
+        mosaic,
+        figsize=(7.2, 7.2*2/3),
+    )
+
+    show_volcano_plot(
+        dfp = df, #p-values df
+        gene_list_to_highlight=filepaths.genes_divisome,
+        df_control_stats = df_control_stats,
+        plot_metadata = plot_metadata,
+        var_id = 'length',
+        ax = axs['v_length'],
+        color_highlight='C0',
+    )
+
+    show_volcano_plot(
+        dfp = df, #p-values df
+        gene_list_to_highlight=filepaths.genes_cell_wall_precursors,
+        df_control_stats = df_control_stats,
+        plot_metadata = plot_metadata,
+        var_id = 'width',
+        ax = axs['v_width'],
+        color_highlight='C4',
+    )
+
+    show_volcano_plot(
+        dfp = df, #p-values df
+        gene_list_to_highlight=filepaths.genes_segregation,
+        df_control_stats = df_control_stats,
+        plot_metadata = plot_metadata,
+        var_id = 'sep_disp',
+        ax = axs['v_sep_disp'],
+        color_highlight='C2',
+    )
+
+    bivariate_plot_with_subsets(
+        df = df,
+        df_subset = df.loc[lambda df_: df_['Gene'].isin(filepaths.genes_divisome), :],
+        df_annotate = (
+            df
+            .loc[lambda df_: 
+                (df_['Gene'].isin(filepaths.genes_divisome)) &
+                (df_[plot_metadata.loc['length', 'col_name_steady_state']] > 3.1)
+            , :]
+            .sort_values(by=plot_metadata.loc['length', 'col_name_steady_state'], ascending=False)
+            .drop_duplicates(subset='Gene')
+        ),
+        df_controls = df.loc[lambda df_: df_['Category'] == 'control', :],
+        x_var = plot_metadata.loc['growth_rate', 'col_name_steady_state'],
+        y_var = plot_metadata.loc['length', 'col_name_steady_state'],
+        ax = axs['b_length'],
+        label_dict = filepaths.long_labels_no_est,
+        color_all = 'gray',
+        color_subset = 'C0',
+        color_controls = 'black',
+    )
+    axs['b_length'].set_ylim(None, 6.5)
+
+    var_id = 'width'
+    bivariate_plot_with_subsets(
+        df = df,
+        df_subset = df.loc[lambda df_: df_['Gene'].isin(filepaths.genes_cell_wall_precursors), :],
+        df_annotate = (
+            df
+            .loc[lambda df_: 
+                (df_['Gene'].isin(filepaths.genes_cell_wall_precursors)) &
+                (df_[plot_metadata.loc[var_id, 'col_name_steady_state']] > 1.2) 
+            , :]
+            .sort_values(by=plot_metadata.loc[var_id, 'col_name_steady_state'], ascending=False)
+            .drop_duplicates(subset='Gene')
+            .iloc[:7]
+        ),
+        df_controls = df.loc[lambda df_: df_['Category'] == 'control', :],
+        x_var = plot_metadata.loc['growth_rate', 'col_name_steady_state'],
+        y_var = plot_metadata.loc[var_id, 'col_name_steady_state'],
+        ax = axs['b_width'],
+        label_dict = filepaths.long_labels_no_est,
+        color_all = 'gray',
+        color_subset = 'C4',
+        color_controls = 'black',
+    )
+    # Set yticks to [1.15, 1.20, 1.25, 1.30]
+    axs['b_width'].set_yticks([1.15, 1.20, 1.25, 1.30])
+    # axs['b_width'].set_ylim(
+
+    var_id = 'sep_disp'
+    bivariate_plot_with_subsets(
+        df = df,
+        df_subset = df.loc[lambda df_: df_['Gene'].isin(filepaths.genes_segregation), :],
+        df_annotate = (
+            df
+            .loc[lambda df_: 
+                (df_['Gene'].isin(filepaths.genes_segregation)) &
+                (df_[plot_metadata.loc[var_id, 'col_name_steady_state']] > 0.032) &
+                (df_[plot_metadata.loc['length', 'col_name_steady_state']] < 4)
+            , :]
+            .sort_values(by=plot_metadata.loc[var_id, 'col_name_steady_state'], ascending=False)
+            .drop_duplicates(subset='Gene')
+        ),
+        df_controls = df.loc[lambda df_: df_['Category'] == 'control', :],
+        x_var = plot_metadata.loc['length', 'col_name_steady_state'],
+        y_var = plot_metadata.loc[var_id, 'col_name_steady_state'],
+        ax = axs['b_sep_disp'],
+        label_dict = filepaths.long_labels_no_est,
+        color_all = 'gray',
+        color_subset = 'C2',
+        color_controls = 'black',
+    )
+
+    fig.tight_layout(pad=0, h_pad=2, w_pad=0.2)
+    fig.savefig(
+        filepaths.figures_savepath / 'figure_2/volcano_bivariate_plots.png',
+        transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
+    )
 
 #### BEFORE SWITCHING FROM MULTI-INDEX TO SINGLE-INDEX COLUMNS
 def show_volcano_plot_old_v2(

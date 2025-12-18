@@ -7,8 +7,8 @@ savefig.dpi : 500
 font.size : 7
 axes.titlesize : 7
 axes.labelsize : 7
-xtick.labelsize : 6
-ytick.labelsize : 6
+xtick.labelsize : 7
+ytick.labelsize : 7
 legend.fontsize : 7
 font.family : sans-serif
 font.sans-serif : Arial, Helvetica, DejaVu Sans, Bitstream Vera Sans, sans-serif

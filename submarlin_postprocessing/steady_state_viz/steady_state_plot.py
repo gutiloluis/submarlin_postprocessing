@@ -63,64 +63,17 @@ df_control_stats = steady_state_viz.generate_control_stats_df(
     # save_filenames=filepaths.control_stats_filenames['merged_all'],
 )
 dfp_b = steady_state_viz.compute_nlog10_fdr(dfp_b, plot_metadata)
+#%%
 
 #%%
-fig, ax = plt.subplots(1,1, figsize=(2.35,2.35))
-gene_list_to_highlight = filepaths.genes_divisome
-var_id = 'length'
-steady_state_viz.show_volcano_plot(
-    dfp = dfp_b, #p-values df
-    gene_list_to_highlight=gene_list_to_highlight,
-    df_control_stats = df_control_stats,
-    plot_metadata = plot_metadata,
-    var_id = var_id,
-    ax = ax,
-    color_highlight='C2',
+plt.style.use('steady_state.mplstyle')
+steady_state_viz.show_volcano_and_bivariate_plots(
+    df=dfp_b,
+    df_control_stats=df_control_stats,
+    plot_metadata=plot_metadata,
 )
-fig.savefig(filepaths.figures_savepath / 'volcano_plots' / f'{var_id}_divisome_volcano.png', transparent=True, pad_inches=0, bbox_inches='tight', dpi=500)
-#%%
-factor = 2/3
-fig, ax = plt.subplots(1,1, figsize=(2.35*factor,2.35*factor))
-gene_list_to_highlight = filepaths.genes_replication
-steady_state_viz.show_volcano_plot(
-    dfp = dfp_b, #p-values df
-    gene_list_to_highlight=gene_list_to_highlight,
-    df_control_stats = df_control_stats,
-    plot_metadata = plot_metadata,
-    var_id = 'length',
-    ax = ax,
-    color_highlight='C4',
-)
-#%%
-fig, ax = plt.subplots(1,1, figsize=(2.35,2.35))
-var_id = 'width'
-gene_list_to_highlight = filepaths.genes_cell_wall_precursors
-steady_state_viz.show_volcano_plot(
-    dfp = dfp_b, #p-values df
-    gene_list_to_highlight=gene_list_to_highlight,
-    df_control_stats = df_control_stats,
-    plot_metadata = plot_metadata,
-    var_id = var_id,
-    ax = ax,
-    color_highlight='C2',
-)
-fig.savefig(filepaths.figures_savepath / 'volcano_plots' / f'{var_id}_cell_wall_precursors_volcano.png', transparent=True, pad_inches=0, bbox_inches='tight', dpi=500)
-#%%
-factor = 1
-fig, ax = plt.subplots(1,1, figsize=(2.35*factor,2.35*factor))
-var_id = 'sep_disp'
-gene_list_to_highlight = filepaths.genes_segregation
-steady_state_viz.show_volcano_plot(
-    dfp = dfp_b, #p-values df
-    gene_list_to_highlight=gene_list_to_highlight,
-    df_control_stats = df_control_stats,
-    plot_metadata = plot_metadata,
-    var_id = 'sep_disp',
-    ax = ax,
-    color_highlight='C2',
-)
-fig.savefig(filepaths.figures_savepath / 'volcano_plots' / f'{var_id}_segregation_volcano.png', transparent=True, pad_inches=0, bbox_inches='tight', dpi=500)
-#%%
+
+#%% For supplement
 gene_list_to_highlight = []
 fig, ax = plt.subplots(1,1, figsize=(3,3))
 steady_state_viz.show_volcano_plot(
@@ -132,7 +85,7 @@ steady_state_viz.show_volcano_plot(
     ax = ax,
 )
 
-#%%
+#%% For supplement
 gene_list_to_highlight = filepaths.genes_segregation
 fig, ax = plt.subplots(1,1, figsize=(3,3))
 steady_state_viz.show_volcano_plot(
@@ -143,7 +96,6 @@ steady_state_viz.show_volcano_plot(
     var_id = 'growth_rate',
     ax = ax,
 )
-
 
 #%% growth_rate increased
 var = plot_metadata.loc['growth_rate','col_name_steady_state']
@@ -218,6 +170,66 @@ cols = [
 #%%
 df_control_stats
 
+
+#%% #######################
+# Trenchwise
+#%% #######################
+df_trench_growth = pd.read_pickle(
+    filepaths.steady_state_growth_df_trench_estimators_filenames['merged_all']
+)
+df_trench_obs = pd.read_pickle(
+    filepaths.steady_state_timepoints_df_trench_estimators_filenames['merged_all']
+)
+#%%
+dfp_b[dfp_b['Gene']=='yabR']
+#%%
+
+df_trench_obs['opLAGm_id'].sort_values().unique()
+#%%
+df_post = (
+    df_trench_obs
+    .loc[('Post', 'Mean')]
+    .loc[lambda df_: df_['Gene']=='ylxX', 'Length']
+    
+)
+
+df_post_ylxx_id = (
+    df_trench_obs
+    .loc[('Post', 'Mean')]
+    .loc[lambda df_: df_['opLAGm_id']==1004180.0, 'Length']
+    
+)
+
+df_controls = (
+    df_trench_obs
+    .loc[('Post', 'Mean')]
+    .loc[lambda df_: df_['Category']=='control']
+    .loc[lambda df_: df_['opLAGm_id'] > 100000]
+    .loc[:, 'Length']
+)
+#%%
+
+sum(df_controls > 3.5) / len(df_controls)
+#%%
+# show df_controls and df_post in the same swarmplot
+fig, ax = plt.subplots(1,1, figsize=(3,3))
+df_control_sample = df_controls.sample(frac=0.1)
+df_plot = pd.DataFrame({
+    'Length': np.concatenate([df_control_sample.values, df_post.values, df_post_ylxx_id.values]),
+    'Group': ['Control']*len(df_control_sample) + ['ylxX']*len(df_post) + ['ylxX_id']*len(df_post_ylxx_id)
+})
+sns.stripplot(data=df_plot, x='Group', y='Length', ax=ax, alpha=0.5, color='black', size=3, jitter=True)
+sns.violinplot(data=df_plot, x='Group', y='Length', ax=ax, inner=None, color='lightgray', alpha=0.8)
+ax.set_ylim(2.35,4)
+#%%
+fig, ax = plt.subplots(1,1, figsize=(3,3))
+# ax.hist(df_post)
+_ = ax.hist(df_controls, alpha=0.7, density=True, bins=100)
+_ = ax.hist(df_post, alpha=0.7, density=True, bins=30)
+ax.set_xlim(None,7)
+# ax.hist(df_post, alpha=0.7)
+#%%
+# Get unique indices
 #%% BEFORE MERGING lLAG8 and lLAG10
 ############################################################
 ## Load data with p-value
@@ -543,6 +555,12 @@ steady_state_viz.show_volcano_plot(
 ############################################################
 ## Figure 3 - Bivariate plots
 ############################################################
+# After merging lLAG08 and lLAG10
+
+
+
+
+#### Before merging lLAG08 and lLAG10
 #%% Steady state bivariate plots
 genes_divisome = filepaths.genes_divisome
 genes_replication = filepaths.genes_replication
