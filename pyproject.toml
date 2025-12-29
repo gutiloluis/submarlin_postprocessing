@@ -29,6 +29,7 @@ dependencies = [
     "goatools",
     "tables",
     "statsmodels",
+    "dna_features_viewer"
 ]
 dynamic = ["version"]
 
