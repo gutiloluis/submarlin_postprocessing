@@ -2,9 +2,11 @@
 import dask.dataframe as dd
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import numpy as np
 from adjustText import adjust_text
 import submarlin_postprocessing.filepaths as filepaths
+import seaborn as sns
 
 ##############################
 ## Functions for processing steady state DataFrames
@@ -331,6 +333,7 @@ def plot_mismatch_panel_single_gene(
         df_gene[x_var],
         df_gene[y_var],
         color=color,
+        alpha = 0.7,
     )
 
     df_controls = df.loc[df['Category'] == 'control', [x_var, y_var]]
@@ -342,7 +345,7 @@ def plot_mismatch_panel_single_gene(
         fmt='o',
         color='black',
         # Marker size
-        markersize=5,
+        markersize=3,
         linewidth=1,
     )
 
@@ -352,42 +355,121 @@ def plot_mismatch_panel_single_gene(
 def plot_mismatch_panels_multiple_genes(
     dfs: dict[str, pd.DataFrame],
     label_dict: dict,
-    save_figure: bool = False
+    save_figure: bool = False,
+    highlight_grnas: bool = False,
 ):
     fig, axs = plt.subplots(2, 1, figsize=(2.3/1.5, 2.3), sharex=True)
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='rplQ',
-        x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
-        y_var='Mean (Robust)_Length',
+        x_var='Instantaneous Growth Rate: Volume',
+        y_var='Length',
         label_dict=label_dict,
         ax=axs[0], color='C0'
     )
 
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='ftsW',
-        x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
-        y_var='Mean (Robust)_Length',
+        x_var='Instantaneous Growth Rate: Volume',
+        y_var='Length',
         label_dict=label_dict,
         ax=axs[0], color='C1'
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='pyk',
-        x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
-        y_var='Mean (Robust)_Length',
+        x_var='Instantaneous Growth Rate: Volume',
+        y_var='Length',
         label_dict=label_dict,
         ax=axs[0], color='C2'
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='murB',
-        x_var='Mean (Robust)_Instantaneous Growth Rate: Volume',
-        y_var='Mean (Robust)_Width',
+        x_var='Instantaneous Growth Rate: Volume',
+        y_var='Width',
         label_dict=label_dict,
         ax=axs[1], color='C4'
     )    
+
+    if highlight_grnas is not None:
+        grnas_to_highlight ={
+            # 'controls': [8166, 8296, 8321],
+            'rplQ': [1229,1228, 1221],
+            'ftsW': [2103,2109, 2111 ],
+            'murB': [2255, 2266,2270,],
+        }
+        color_map = {'rplQ': 'C0', 'ftsW': 'C1', 'murB': 'C4'}
+        for gene, grna_ids in grnas_to_highlight.items():
+            for idx, grna_id in enumerate(grna_ids):
+                df_grna = dfs['lLAG08'].loc[
+                    (dfs['lLAG08']['Gene'] == gene) &
+                    (dfs['lLAG08']['opLAG1_id'] == grna_id),
+                    ['Instantaneous Growth Rate: Volume', 'Length', 'Width']
+                ]
+                color = color_map.get(gene, 'red')
+                if gene != 'murB':
+                    axs[0].scatter(
+                        df_grna['Instantaneous Growth Rate: Volume'],
+                        df_grna['Length'],
+                        s=12,
+                        edgecolor='black',
+                        facecolor=color,
+                        # linewidth=1.5,
+                    )
+                    if gene == 'rplQ':
+                        axs[0].annotate(
+                            str(idx + 1),
+                            (df_grna['Instantaneous Growth Rate: Volume'].values[0], df_grna['Length'].values[0]),
+                            color='black',
+                            fontsize=7,
+                            ha='right',
+                            va='center',
+                            fontweight='bold',
+                            bbox=dict(facecolor='none', edgecolor='none', pad=0.5, alpha=0.7),
+                            xytext=(-3, 0),  # Move left by 8 points, vertically centered
+                            textcoords='offset points'
+                        )
+                    elif gene == 'ftsW':
+                        axs[0].annotate(
+                            str(idx + 1),
+                            (df_grna['Instantaneous Growth Rate: Volume'].values[0], df_grna['Length'].values[0]),
+                            color='black',
+                            fontsize=7,
+                            ha='left',  # Change to 'left' to show on the right of the point
+                            va='center',
+                            fontweight='bold',
+                            bbox=dict(facecolor='none', edgecolor='none', pad=0.5, alpha=0.7),
+                            xytext=(3, 0),  # Change x offset to positive to move right
+                            textcoords='offset points'
+                        )
+                if gene == 'murB':
+                    axs[1].scatter(
+                    df_grna['Instantaneous Growth Rate: Volume'],
+                    df_grna['Width'],
+                    s=12,
+                    edgecolor='black',
+                    facecolor=color,
+                    # linewidth=1.5,
+                    )
+                    axs[1].annotate(
+                        str(idx + 1),
+                        (
+                            df_grna['Instantaneous Growth Rate: Volume'].values[0],
+                            df_grna['Width'].values[0]
+                        ),
+                        color='black',
+                        fontsize=7,
+                        ha='right',
+                        va='center',
+                        fontweight='bold',
+                        bbox=dict(facecolor='none', edgecolor='none', pad=0.5, alpha=0.7),
+                        xytext=(-2, 0),
+                        textcoords='offset points'
+                    )
+
+
     # Set y axis of axs[0] to log scale
     axs[0].set_yscale('log')
     for ax in axs:
-        ax.set_xlim(0,1)
+        ax.set_xlim(0,1.5)
     # Set y ticks of axs[0] to [2, 3, 4, 6]
     axs[0].set_yticks([3, 4, 5, 6, 7])
     # Set y tick labels of axs[0] to ['2', '3', '4', '6']
@@ -395,14 +477,17 @@ def plot_mismatch_panels_multiple_genes(
 
     axs[1].set_yticks([1.2, 1.25])
     axs[1].set_yticklabels(['1.20', '1.25'])
-    axs[1].set_xlabel(label_dict['Mean (Robust)_Instantaneous Growth Rate: Volume'])
+
+    axs[1].set_xticks([0.0, 0.5, 1.0, 1.5])
+    axs[1].set_xticklabels(['0', '0.5', '1', '1.5'])
+    axs[1].set_xlabel(label_dict['Instantaneous Growth Rate: Volume'])
     # 1. Use the built-in helper function to align Y-axis labels across all subplots
     # This aligns the center of the labels
     fig.align_ylabels([axs[0], axs[1]])
     fig.tight_layout(pad=1, h_pad=0.5, w_pad=0.05)
     if save_figure:
         plt.savefig(
-            filepaths.headpath / 'bmarlin_manuscript/figure_2/mismatch_panels.png',
+            filepaths.headpath / 'bmarlin_manuscript/figure_2/mismatch_panels_annotated.png',
             transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
         )
 
@@ -522,7 +607,8 @@ def show_volcano_and_bivariate_plots(
 
     fig, axs = plt.subplot_mosaic(
         mosaic,
-        figsize=(7.2, 7.2*2/3),
+        # figsize=(7.2, 7.2*2/3),
+        figsize=(5, 7.2*2/3*2/3),
     )
 
     show_volcano_plot(
@@ -534,6 +620,29 @@ def show_volcano_and_bivariate_plots(
         ax = axs['v_length'],
         color_highlight='C0',
     )
+    axs['v_length'].annotate(
+        'Divisome',
+        # Do it a little below the top right
+        xy=(0.95, 0.85),
+        xycoords='axes fraction',
+        ha='right',
+        va='top',
+        fontsize=7,
+        # Set font color to 'C0'
+        color='C0',
+    )
+
+    axs['v_length'].annotate(
+        'Controls',
+        # Do it a little below the top right
+        xy=(0.2, 0.05),
+        xycoords='axes fraction',
+        ha='left',
+        va='bottom',
+        fontsize=7,
+        # Set font color to 'C0'
+        color='black',
+    )
 
     show_volcano_plot(
         dfp = df, #p-values df
@@ -544,6 +653,19 @@ def show_volcano_and_bivariate_plots(
         ax = axs['v_width'],
         color_highlight='C4',
     )
+    axs['v_width'].set_ylabel('')
+    axs['v_width'].annotate(
+        'Cell Wall\nPrecursors',
+        # Do it a little below the top right
+        xy=(1, 0.85),
+        xycoords='axes fraction',
+        ha='right',
+        va='top',
+        fontsize=7,
+        # Set font color to 'C4'
+        color='C4',
+    )
+
 
     show_volcano_plot(
         dfp = df, #p-values df
@@ -554,6 +676,18 @@ def show_volcano_and_bivariate_plots(
         ax = axs['v_sep_disp'],
         color_highlight='C2',
     )
+    axs['v_sep_disp'].set_ylabel('')
+    axs['v_sep_disp'].annotate(
+        'Chromosome\nSegregation',
+        # Do it a little below the top right
+        xy=(1, 0.85),
+        xycoords='axes fraction',
+        ha='right',
+        va='top',
+        fontsize=7,
+        # Set font color to 'C2'
+        color='C2',
+    )
 
     bivariate_plot_with_subsets(
         df = df,
@@ -562,10 +696,11 @@ def show_volcano_and_bivariate_plots(
             df
             .loc[lambda df_: 
                 (df_['Gene'].isin(filepaths.genes_divisome)) &
-                (df_[plot_metadata.loc['length', 'col_name_steady_state']] > 3.1)
+                (df_[plot_metadata.loc['length', 'col_name_steady_state']] > 3.3)
             , :]
             .sort_values(by=plot_metadata.loc['length', 'col_name_steady_state'], ascending=False)
             .drop_duplicates(subset='Gene')
+            .iloc[2:4]
         ),
         df_controls = df.loc[lambda df_: df_['Category'] == 'control', :],
         x_var = plot_metadata.loc['growth_rate', 'col_name_steady_state'],
@@ -590,7 +725,7 @@ def show_volcano_and_bivariate_plots(
             , :]
             .sort_values(by=plot_metadata.loc[var_id, 'col_name_steady_state'], ascending=False)
             .drop_duplicates(subset='Gene')
-            .iloc[:7]
+            .iloc[:4]
         ),
         df_controls = df.loc[lambda df_: df_['Category'] == 'control', :],
         x_var = plot_metadata.loc['growth_rate', 'col_name_steady_state'],
@@ -618,6 +753,7 @@ def show_volcano_and_bivariate_plots(
             , :]
             .sort_values(by=plot_metadata.loc[var_id, 'col_name_steady_state'], ascending=False)
             .drop_duplicates(subset='Gene')
+            .iloc[:4]
         ),
         df_controls = df.loc[lambda df_: df_['Category'] == 'control', :],
         x_var = plot_metadata.loc['length', 'col_name_steady_state'],
@@ -628,12 +764,186 @@ def show_volcano_and_bivariate_plots(
         color_subset = 'C2',
         color_controls = 'black',
     )
+    axs['b_sep_disp'].set_xlim(2, 6.5)
 
-    fig.tight_layout(pad=0, h_pad=2, w_pad=0.2)
+    fig.tight_layout(pad=0, h_pad=0.4, w_pad=0.2)
     fig.savefig(
         filepaths.figures_savepath / 'figure_2/volcano_bivariate_plots.png',
         transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
     )
+
+#%% ####################
+# Violin and strip plots
+########################
+def violin_strip_plot(
+    df_trench: pd.DataFrame,
+    var_id,
+    ids: dict,
+    plot_metadata: pd.DataFrame,
+    ax,
+    show_violins: bool = True,
+    show_images_on_top: bool = False,
+    image_zoom: float = 0.5,
+    alpha_violin: float = 0.5,
+    alpha_strip: float = 0.9,
+):
+    import seaborn as sns
+    df_list = []
+    for group_name, value_dict in ids.items():
+        df_id = (
+            df_trench.loc[
+                lambda df_: df_[value_dict['col']] == value_dict['id'],
+                ['Category', 'Gene', 'opLAGm_id', plot_metadata.loc[var_id, 'col_name_steady_state']]
+            ]
+            .assign(group = group_name)
+        )
+        df_list.append(df_id)
+    
+    df_plot = pd.concat(df_list, axis=0)
+
+    plot_order = list(ids.keys())
+    if show_violins:
+        sns.violinplot(
+            data=df_plot,
+            x='group',
+            y=plot_metadata.loc[var_id, 'col_name_steady_state'],
+            order=plot_order,
+            inner=None,#'box',
+            linewidth=0.5,
+            alpha=alpha_violin,
+            cut=0,
+            # saturation=0.5,
+            color='lightgray',
+            ax=ax,
+    )
+
+    sns.stripplot(
+        data=df_plot.loc[lambda df_: df_['Category'] != 'control', :],
+        x='group',
+        y=plot_metadata.loc[var_id, 'col_name_steady_state'],
+        order=plot_order,
+        size=4,
+        ax=ax,
+        color='gray',
+        # edgecolor='black',
+        # linewidth=0.5,
+        alpha =alpha_strip,
+    )
+    ax.set_ylabel(plot_metadata.loc[var_id, 'title'])
+    ax.set_xlabel('')
+    ax.tick_params(axis='x', rotation=45, labelsize=7)
+
+    # Overlay errorbars for median and IQR
+    for i, group_name in enumerate(plot_order):
+        df_group = df_plot.loc[lambda df_: df_['group'] == group_name, :]
+        median = df_group[plot_metadata.loc[var_id, 'col_name_steady_state']].median()
+        q1 = df_group[plot_metadata.loc[var_id, 'col_name_steady_state']].quantile(0.25)
+        q3 = df_group[plot_metadata.loc[var_id, 'col_name_steady_state']].quantile(0.75)
+        ax.hlines(
+            y=median,
+            xmin=i - 0.2,
+            xmax=i + 0.2,
+            color='black',
+            linewidth=2,
+            zorder=10,
+        )
+        ax.vlines(
+            x=i,
+            ymin=q1,
+            ymax=q3,
+            color='black',
+            linewidth=1.5,
+            zorder=10,
+        )
+        ax.hlines(
+            y=[q1, q3],
+            xmin=i - 0.1,
+            xmax=i + 0.1,
+            color='black',
+            linewidth=1.5,
+            zorder=10,
+        )
+
+    # current_ylim = ax.get_ylim()
+    if show_images_on_top:
+        cmap = ['C0', 'C1', 'C2', 'C3', 'C4']
+        trans = ax.get_xaxis_transform()
+        for i, group_name in enumerate(plot_order):
+            gene = ids[group_name]['gene']
+            variant_id = ids[group_name]['id_kymos']
+            if gene == 'control':
+                continue
+            try:
+                img = plt.imread(
+                    filepaths.figures_savepath / 'last_timepoints_examples' / f'{gene}_{variant_id}_last_t.png'
+                )
+            except FileNotFoundError:
+                print(f'Kymograph image not found for {gene} {variant_id}')
+                continue
+    
+            # # Now highlight points corresponding to images on top
+            exp_key = 'lLAG08' if ids[group_name]['id'] < 1000000 else 'lLAG10'
+            
+            trench_indices = filepaths.indices_last_t[exp_key][gene][variant_id]
+            if len(trench_indices) == 0:
+                print(f'No trench indices found for {gene} {variant_id}')
+                continue
+            # Get trench data
+            print(df_trench.loc[trench_indices, plot_metadata.loc[var_id, 'col_name_steady_state']])
+            # Draw points on the corresponding violin plot
+            
+            colors = [cmap[j % len(cmap)] for j in range(len(trench_indices))]
+            ax.scatter(
+                x = np.full(len(trench_indices), i),
+                y = df_trench.loc[trench_indices, plot_metadata.loc[var_id, 'col_name_steady_state']],
+                s = 30,
+                color = colors,
+                edgecolor = 'black',
+                zorder = 15,
+            )
+            
+            
+            # Create the image box
+            imagebox = OffsetImage(img, zoom=image_zoom, cmap='gray')
+            
+            ab = AnnotationBbox(
+                imagebox,
+                xy=(i, 1.0),            # i = data x-coord, 1.0 = top of the axis
+                xycoords=trans,         # Use the blended transform defined above
+                xybox=(0, 5),           # Push image 5 points UP from the top axis line
+                boxcoords="offset points",
+                frameon=True,           # Keep True for testing, False for final
+                pad=0,
+                box_alignment=(0.5, 0), # Align bottom-center of image to the anchor
+                annotation_clip=False   # CRITICAL: Allows drawing outside the box
+            )
+            ax.add_artist(ab)
+        # Draw points for controls
+        
+        # gene = 'control'
+        # trench_indices = filepaths.indices_last_t['lLAG08']['control'][8449]
+        # colors = [cmap[j % len(cmap)] for j in range(len(trench_indices))]
+        # if len(trench_indices) > 0:
+        #     ax.scatter(
+        #         x = np.full(len(trench_indices), 0),
+        #         y = df_trench.loc[trench_indices, plot_metadata.loc[var_id, 'col_name_steady_state']],
+        #         s = 30,
+        #         color = colors,
+        #         edgecolor = 'black',
+        #         zorder = 15,
+        # )
+
+    # sns.stripplot(
+    #     data=df_plot,
+    #     x='group',
+    #     y=plot_metadata.loc[var_id, 'col_name_steady_state'],
+    #     jitter=True,
+    #     size=4,
+    #     ax=ax,
+    #     edgecolor='black',
+    #     linewidth=0.5,
+    # )
+
 
 #### BEFORE SWITCHING FROM MULTI-INDEX TO SINGLE-INDEX COLUMNS
 def show_volcano_plot_old_v2(

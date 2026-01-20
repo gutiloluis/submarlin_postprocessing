@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import statsmodels.stats.multitest
 import submarlin_postprocessing.clustering_viz as clustering_viz
+import submarlin_postprocessing.filepaths as filepaths
 import submarlin_postprocessing.steady_state_viz.steady_state_viz as steady_state_viz
 import pandas as pd
 import numpy as np
@@ -609,14 +610,22 @@ def plot_mosaic_eco_bsub_comparison(
     gene_groups_b,
     plot_metadata,
 ):
+    # mosaic = [
+    #     ['B', 'B', 'B_ribo_hist', 'B_trna_hist', 'B_init_hist', 'B_small_hist'],
+    #     ['B', 'B', 'B_ribo_slope', 'B_trna_slope', 'B_init_slope', 'B_small_slope'],
+    #     ['E', 'E', 'E_ribo_hist', 'E_trna_hist', 'E_init_hist', 'E_small_hist'],
+    #     ['E', 'E', 'E_ribo_slope', 'E_trna_slope', 'E_init_slope', 'E_small_slope'],
+    # ]
+
     mosaic = [
-        ['B', 'B', 'B_ribo_hist', 'B_trna_hist', 'B_init_hist', 'B_small_hist'],
         ['B', 'B', 'B_ribo_slope', 'B_trna_slope', 'B_init_slope', 'B_small_slope'],
-        ['E', 'E', 'E_ribo_hist', 'E_trna_hist', 'E_init_hist', 'E_small_hist'],
+        ['B', 'B', 'B_ribo_hist', 'B_trna_hist', 'B_init_hist', 'B_small_hist'],
         ['E', 'E', 'E_ribo_slope', 'E_trna_slope', 'E_init_slope', 'E_small_slope'],
+        ['E', 'E', 'E_ribo_hist', 'E_trna_hist', 'E_init_hist', 'E_small_hist'],
     ]
 
-    fig, axs = plt.subplot_mosaic(mosaic, figsize=(7.2,4))
+
+    fig, axs = plt.subplot_mosaic(mosaic, figsize=(7.2,4.5))
 
     ax = axs['B']
     plot_length_growth_scatter_bsubtilis(
@@ -802,12 +811,12 @@ def plot_mosaic_eco_bsub_comparison(
         color=color
     )
 
-    fig.tight_layout()
+    fig.tight_layout(pad=0, h_pad=None, w_pad=None)
 
-    axs['B_ribo_hist'].set_title('Ribosome', color='C0')
-    axs['B_trna_hist'].set_title('tRNA Synthetases', color='C1')
-    axs['B_init_hist'].set_title('Initiation Factors', color='C3')
-    axs['B_small_hist'].set_title('Small Molecule Metabolism', color='C4')
+    axs['B_ribo_slope'].set_title('Ribosome', color='C0')
+    axs['B_trna_slope'].set_title('tRNA Synthetases', color='C1')
+    axs['B_init_slope'].set_title('Initiation Factors', color='C3')
+    axs['B_small_slope'].set_title('Small Molecule Metabolism', color='C4')
 
     for ax_key in axs.keys():
         ax = axs[ax_key]
@@ -824,7 +833,13 @@ def plot_mosaic_eco_bsub_comparison(
                 ax.set_ylabel('Length ($\mu$m)')
             else:
                 ax.set_ylabel('')
-
+    fig.savefig(
+        filepaths.figures_savepath / 'ribosome_trnas_all.png',
+        dpi=600,
+        pad_inches=0,
+        bbox_inches='tight',
+    )
+    
 def make_grid_slope_plots(
     df_pvalues,
     df_slopes,

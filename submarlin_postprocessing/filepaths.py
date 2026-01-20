@@ -410,7 +410,7 @@ column_names = {'t_idiv': 'Mean (Robust)_Delta time (s)',
                 'length': 'Mean (Robust)_Length',
                 'width': 'Mean (Robust)_Width',
                 'intensity': 'Mean (Robust)_mCherry mean_intensity',
-                'growth_rate': 'Mean (Robust)_Instantaneous Growth Rate: Volume'}
+                'growth_rate': 'Mean genes_elongasome(Robust)_Instantaneous Growth Rate: Volume'}
 
 column_names_no_est = {'t_idiv': 'Delta time (s)',
                 'sep_disp': 'Septum Displacement Length Normalized',
@@ -426,14 +426,14 @@ short_labels = {'Mean (Robust)_Delta time (s)': r'$ \tau $',
                 'Mean (Robust)_mCherry mean_intensity': r'$ I_{rpsL} $',
                 'Mean (Robust)_Instantaneous Growth Rate: Volume': r'$ \lambda $'}
 long_labels = {'Mean (Robust)_Delta time (s)': 'Interdivision Time (s)',
-                'Mean (Robust)_Septum Displacement Length Normalized': 'Normalized Septum Displacement',
+                'Mean (Robust)_Septum Displacement Length Normalized': 'Septum Error (%)',
                 'Mean (Robust)_Length': 'Length ($\mu$m)',
                 'Mean (Robust)_Width': 'Width ($\mu$m)',
                 'Mean (Robust)_mCherry mean_intensity': 'mCherry Mean Intensity (AU)',
                 'Mean (Robust)_Instantaneous Growth Rate: Volume': 'Growth Rate (1/hr)'}
 
 long_labels_no_est = {'Delta time (s)': 'Interdivision Time (s)',
-                'Septum Displacement Length Normalized': 'Normalized Septum Displacement',
+                'Septum Displacement Length Normalized': 'Septum Error (%)',
                 'Length': 'Length ($\mu$m)',
                 'Width': 'Width ($\mu$m)',
                 'mCherry mean_intensity': 'mCherry Mean Intensity (AU)',
@@ -444,7 +444,7 @@ long_labels_no_est = {'Delta time (s)': 'Interdivision Time (s)',
 
 genes_divisome = ["divIB", "divIC", "ezrA", "ftsA", "ftsL", "ftsW", "ftsZ", "pbpB", "sepF", "zapA"]
 genes_replication = ['arrA', 'ccrZ', 'dnaA', 'dnaB', 'dnaC', 'dnaD', 'dnaE', 'dnaG', 'dnaI', 'dnaN', 'dnaX', 'fenA', 'hbs', 'holA', 'holB', 'ligA', 'ligB', 'polA', 'polC', 'priA', 'recD2', 'recJ', 'recQ', 'rnhB', 'rnhC', 'rtp', 'sirA', 'ssbA', 'ssbB', 'topB', 'xtmA', 'xtmB', 'yabA']
-genes_elongasome = ["mreB", "mbl", "mreBH", "mreC", "mreD", "rodZ", "rodA", "pbpA", "pbpH", "ponA", "tseB", "lytE", "sigI"]
+ = ["mreB", "mbl", "mreBH", "mreC", "mreD", "rodZ", "rodA", "pbpA", "pbpH", "ponA", "tseB", "lytE", "sigI"]
 genes_cell_wall_precursors = ["alr", "amj", "asd", "dapA", "dapB", "dapF", "dapG", "dat", "ddl", "gcaD", "glmM", "glmR", "glmS", "ldcB", "ldt", "mraY", "murAA", "murAB", "murB", "murC", "murD", "murE", "murF", "murG", "murJ", "patA", "pgcA", "racE", "spoVB", "spoVE", "uptA", "walJ", "yabM", "yciB", "ykuQ", "ykuR", "ylmD", "yrpC"]
 genes_teichoic_acid = ["dltA", "dltB", "dltC", "dltD", "dltE", "dltX", "ggaA", "ggaB", "gtaB", "gtcA", "mnaA", "pgcA", "tagA", "tagB", "tagC", "tagD", "tagE", "tagF", "tagG", "tagH", "tagO", "yngA"]
 genes_segregation = ["codV", "gyrA", "gyrB", "hbs", "parA", "parB", "parC", "parE", "rok", "scpA", "scpB", "sftA", "smc", "spoIIIE", "topA", "topB", "whiA", "xerD"]
@@ -659,14 +659,57 @@ indices_last_t = {
     'lLAG08': {
 
         'control': {
-            8449: [16491, 5518, 22619, 24027, 36674],
+            8449: [
+                16491, 5518, 
+                22619, 
+                24027, 
+                36674,
+            ],
+            8166: [
+                193921,
+                154891,
+                144388,
+            ],
+            8296: [
+                189275,
+                158277,
+                151454,
+                # 23471,
+                # 36196,
+            ],
+            8321: [
+                227992,
+                169020,
+                122708,
+                # 119039,
+                # 34680,
+            ]
+
         },
 
         'rplQ': {
             1221: [
-                211173, 529820, 
+                211173, 
+                # 529820, 
                 # 616169, 
-                240081, 14090, 545118]
+                240081, 
+                # 14090, 
+                545118],
+            1228:[
+                61625,
+                55584,
+                92457,
+                # 134176,
+                # 90821,
+            ],
+            1229: [
+                139799,
+                159906,
+                # 111047,
+                80530,
+            ],
+
+            
         },
         'divIC': {
             287: [
@@ -680,8 +723,26 @@ indices_last_t = {
             2111: [
                 516853, 
                 # 300165910, 
-                300103878, 137050, 300310990, 300539796
-            ]
+                300103878, 
+                137050, 
+                # 300310990,
+                # 300539796
+            ],
+            2109: [
+                # 116763,
+                # 156316,
+                # 135971,
+                199761,
+                # 174211,
+                # 53761,
+                439605,
+                290439,
+            ],
+            2103: [
+                124044,
+                47774,
+                149688,
+            ],
         },
         'ftsL': {
             2138: [492968, 196360, 192650, 359776],
@@ -697,6 +758,11 @@ indices_last_t = {
         
         'eno': {
             5200: [127422, 537736, 92158, 129547,78268],
+        },
+
+        'pyk': {
+            4639: [344755, 317286, 311176, 288189, 255624],
+
         },
 
         'polC': {
@@ -750,6 +816,78 @@ indices_last_t = {
                 73277, 26020, 34799, 35406, 54241,
             ],
         },
+        'murB': {
+            2270: [
+                158005,  128248, 59244, 
+                # 208120, 393280
+            ],
+
+            2266: [
+                296138,
+                224969,
+                218518,
+                # 189188,
+                # 163139,
+            ],
+
+            2255: [
+                205487, 212617, 
+                189300,
+                # 127370, 50843
+            ],
+            # 2256: [
+            #     121257,
+            #     95375,
+            #     108905,
+            # ],
+        },
+
+        # Width - violin
+        'yumC': {
+            5013: [
+                376470, # mid
+                171607,
+                # 73903,
+                # 126937,
+            ],
+            5021: [
+                91579,
+                231677,
+                # 620227,
+            ],
+            5023: [
+                237054,
+                # 515795,
+                # 300384272,
+                # 300080186,
+                # 109585,
+                528717,
+                # 300240245,
+                # 519817,
+            ],
+        },
+        'mrpA': {
+            4922: [113833, 300173604, 615172,
+            # 377541
+            ],
+        },
+        # 'yneF': {
+        #     3226: [650171, 484784, 302568],
+        # },
+        'yneF': {
+            3225: [
+                519139,
+                127232,
+            ],
+            3226: [
+                510846,
+                302568,
+            ],
+            3227: [
+                300117003,
+                445373,
+            ],
+        },
     },
 
     'lLAG10': {
@@ -767,12 +905,76 @@ indices_last_t = {
             182: [100251045, 100610229, 100597341, 100116157, 100044973]
         },
         'fliE': {
-            4371: [100703244, 100405526, 100126596, 100770909, 100200251]
+            4371: [
+                100703244,
+                100405526,
+                100126596,
+                100770909,
+                100200251],
         },
+        'fliY': {
+            4409: [
+                100080923,
+                100506807,
+                100127803,
+                100255469,
+                100051286,
+            ],
+        },
+        'sigD': {
+            4456: [
+                # 100226263,
+                100139077,
+                100700222,
+                100563212,
+                100540586,
+                100662576,
+            ],
+        },
+        
+
         'rplK': {
             209: [100227096, 100225637, 100356625, 100416269, 100301316]
-        }
-    }
+        },
+        #### For violin plots
+        'ylxX': {
+            4180: [
+                # 100608995,# top
+                100359354,# top
+                # 100474111,# mid
+                100150241,# mid
+            ],
+            4179: [
+                # 100093845,# top
+                100742913,# top
+                # 100581718,# mid
+                100450557,# mid
+            ],
+        },
+        'sbp': {
+            4182: [
+                # 100731077,# top
+                100652453,# top
+                # 100332205,# top
+                100032867,# mid
+            ],
+        },
+        'ytxG':{
+            7621: [
+                100695736, #top
+                # 100138225, #top
+                100722502, #mid
+                # 100276727, #mid
+            ],
+        },
+        'yaaR': {
+            58: [
+                100330110,# top
+                100474807,
+                # 100554150, # botton
+            ],
+        },
+    },
 }
 
 figures_savepath = headpath / 'bmarlin_manuscript'

@@ -869,6 +869,24 @@ def show_last_timepoints_figure(
             dpi=600
         )
 
+def show_last_timepoints_from_df_ids(
+    df_ids: pd.DataFrame,
+    metadata_dfs: dict
+    # n_timepoints: int = 2,
+):
+    # A group is a single violin plot (i.e. a single gRNA)
+    # Iterate over rows of the dataframe
+    for i, row in df_ids.iterrows():
+        print(f"Showing last timepoints for gene {row['gene']}, variant ID {row['id_kymos']}")
+        show_last_timepoints_figure(
+            exp_key = 'lLAG08' if row['id'] < 1000000 else 'lLAG10',
+            gene = row['gene'],
+            variant_id = row['id_kymos'],
+            metadata_dfs = metadata_dfs,
+            save_figure = True,
+            show_scale = row['id'] == 'control',
+            title=None
+        )
 
 def load_metadata_dfs(exp_groups:list) -> dict:
     '''

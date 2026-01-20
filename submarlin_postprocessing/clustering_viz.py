@@ -117,9 +117,14 @@ def plot_umap_variables(clustering_visualization, query:str=None, cluster_level=
             alpha=1,
             rasterized=True
         )
-        axs[1,3].set_title(f'{query}')
+        # axs[1,3].set_title(f'{query}')
     fig.show()
-
+    fig.savefig(
+        filepaths.figures_savepath / 'umap_variables_replication.png',
+        dpi=600,
+        pad_inches=0,
+        bbox_inches='tight',
+    )
 def initialize_plot_metadata():
 ## DEFINE STUFF
 

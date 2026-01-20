@@ -11,3 +11,7 @@ __pycache__/
 *.goa
 *.obo
 *.gaf
+
+# Ignore csv files
+*.csv
+*.tsv
