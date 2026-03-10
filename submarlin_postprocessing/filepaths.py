@@ -444,7 +444,7 @@ long_labels_no_est = {'Delta time (s)': 'Interdivision Time (s)',
 
 genes_divisome = ["divIB", "divIC", "ezrA", "ftsA", "ftsL", "ftsW", "ftsZ", "pbpB", "sepF", "zapA"]
 genes_replication = ['arrA', 'ccrZ', 'dnaA', 'dnaB', 'dnaC', 'dnaD', 'dnaE', 'dnaG', 'dnaI', 'dnaN', 'dnaX', 'fenA', 'hbs', 'holA', 'holB', 'ligA', 'ligB', 'polA', 'polC', 'priA', 'recD2', 'recJ', 'recQ', 'rnhB', 'rnhC', 'rtp', 'sirA', 'ssbA', 'ssbB', 'topB', 'xtmA', 'xtmB', 'yabA']
- = ["mreB", "mbl", "mreBH", "mreC", "mreD", "rodZ", "rodA", "pbpA", "pbpH", "ponA", "tseB", "lytE", "sigI"]
+genes_elongasome = ["mreB", "mbl", "mreBH", "mreC", "mreD", "rodZ", "rodA", "pbpA", "pbpH", "ponA", "tseB", "lytE", "sigI"]
 genes_cell_wall_precursors = ["alr", "amj", "asd", "dapA", "dapB", "dapF", "dapG", "dat", "ddl", "gcaD", "glmM", "glmR", "glmS", "ldcB", "ldt", "mraY", "murAA", "murAB", "murB", "murC", "murD", "murE", "murF", "murG", "murJ", "patA", "pgcA", "racE", "spoVB", "spoVE", "uptA", "walJ", "yabM", "yciB", "ykuQ", "ykuR", "ylmD", "yrpC"]
 genes_teichoic_acid = ["dltA", "dltB", "dltC", "dltD", "dltE", "dltX", "ggaA", "ggaB", "gtaB", "gtcA", "mnaA", "pgcA", "tagA", "tagB", "tagC", "tagD", "tagE", "tagF", "tagG", "tagH", "tagO", "yngA"]
 genes_segregation = ["codV", "gyrA", "gyrB", "hbs", "parA", "parB", "parC", "parE", "rok", "scpA", "scpB", "sftA", "smc", "spoIIIE", "topA", "topB", "whiA", "xerD"]
