@@ -12,6 +12,7 @@ __pycache__/
 *.obo
 *.gaf
 
-# Ignore csv files
+# Ignore tabular data files
 *.csv
 *.tsv
+*.pkl

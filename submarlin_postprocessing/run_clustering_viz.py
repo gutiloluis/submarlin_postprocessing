@@ -8,8 +8,9 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 import submarlin_postprocessing.clustering_viz as clustering_viz
+import submarlin_postprocessing.filepaths as filepaths
 import submarlin_postprocessing.goanalysis as goanalysis
-
+plt.style.use('steady_state_viz/steady_state.mplstyle')
 #%%
 # clustering_vis_obj_l8 = clustering_viz.ClusteringVisualization(
 #     exp_group='lLAG08',
@@ -157,7 +158,7 @@ clustering_vis_obj.clustering_df = (
     )
 )
 
-#%%
+#%% Show the groups!
 
 # Assuming this is your original dictionary palette (with 19 items):
 custom_palette = {
@@ -225,7 +226,22 @@ for index, row in centroids.iterrows():
         # bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.4') 
     )
 
-#%%
+
+# Remove frame and ticks
+ax.set_frame_on(False)
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_xlabel('UMAP 1')
+ax.set_ylabel('UMAP 2')
+
+fig.tight_layout()
+# fig.savefig(
+#     filepaths.figures_savepath / 'clustering/umap_clusters_Lm.png',
+#     dpi=600,
+#     pad_inches=0,
+#     bbox_inches='tight',
+# )
+#%% PLOT HEATMAP VERTICAL AND HORIZONTAL
 def plot_heatmap_vertical(
     df_heatmap,
     clustering_viz,
@@ -297,17 +313,6 @@ def plot_heatmap_vertical(
         )
         ax.set_yticklabels([clustering_viz.plot_metadata.iloc[i]['title']], rotation=0, fontsize=16)
 
-plot_heatmap_vertical(
-    df_heatmap=df_heatmap_summary_L3,
-    col_names=clustering_vis_obj.plot_metadata['col_name_last_t'].values,
-    vmins=clustering_vis_obj.plot_metadata['vmin_plot'].values,
-    vmaxs=clustering_vis_obj.plot_metadata['vmax_plot'].values,
-    center=clustering_vis_obj.plot_metadata['median_control'].values,
-    clustering_viz=clustering_vis_obj,
-    # orientation="vertical"
-)
-
-#%%
 def plot_heatmap_horizontal(
     df_heatmap,
     clustering_viz,
@@ -316,7 +321,7 @@ def plot_heatmap_horizontal(
     vmaxs,
     center,
 ):
-    cell_height = 0.9
+    cell_height = 1#0.9
     fig_height = cell_height * df_heatmap.shape[1]
     print(fig_height)
     fig, axs = plt.subplots(
@@ -360,8 +365,28 @@ def plot_heatmap_horizontal(
             linewidth=0.5,
             ax=ax
         )
-        ax.set_xticklabels([clustering_viz.plot_metadata.iloc[i]['short_label']], rotation=0, fontsize=16)
-        
+        ax.set_xticklabels([clustering_viz.plot_metadata.iloc[i]['short_label']], rotation=0, 
+            # fontsize=16
+        )
+    
+    # fig.savefig(
+    #     filepaths.figures_savepath / 'clustering/heatmap_per_cluster.png',
+    #     dpi=600,
+    #     pad_inches=0, bbox_inches='tight'
+    # )
+
+#%%
+# plot_heatmap_vertical(
+#     df_heatmap=df_heatmap_summary_L3,
+#     col_names=clustering_vis_obj.plot_metadata['col_name_last_t'].values,
+#     vmins=clustering_vis_obj.plot_metadata['vmin_plot'].values,
+#     vmaxs=clustering_vis_obj.plot_metadata['vmax_plot'].values,
+#     center=clustering_vis_obj.plot_metadata['median_control'].values,
+#     clustering_viz=clustering_vis_obj,
+#     # orientation="vertical"
+# )
+#%%
+
 plot_heatmap_horizontal(
     df_heatmap=df_heatmap_summary_L3,
     col_names=clustering_vis_obj.plot_metadata['col_name_last_t'].values,
@@ -371,7 +396,8 @@ plot_heatmap_horizontal(
     clustering_viz=clustering_vis_obj,
 )
 
-#%%
+
+#%% HEATMAP ALL GENES
 # Heatmap of all genes (rows = genes, columns = timepoints), ordered by cluster (Lm), with very thin cells and no gene names
 
 # 1. Prepare gene-level summary: median per gene, with cluster assignment
@@ -410,7 +436,7 @@ data_for_heatmap = indexed_data.reshape(-1, 1)
 num_categories = len(color_list)
 
 # Plot
-cell_height = 0.01  # Make cells even thinner
+cell_height = 0.012  # Make cells even thinner
 fig_height = max(cell_height * gene_heatmap_df.shape[0], 2)  # Set a minimum height for visibility
 fig, axs = plt.subplots(1, len(col_names)+1, figsize=(2.5, fig_height), gridspec_kw={'wspace': 0})
 
@@ -450,20 +476,19 @@ for i, col_name in enumerate(col_names):
 
 plt.tight_layout()
 # plt.savefig(
-#     filepaths.figures_savepath / 'gene_level_heatmap_by_cluster_Lm.png',
+#     filepaths.figures_savepath / 'clustering/heatmap_all_genes.png',
 #     dpi=600,
 #     pad_inches=0,
 #     bbox_inches='tight',
 # )
 plt.show()
 
-#%%
+#%% GOANALYSIS
 go_enrichment_analysis = goanalysis.GOEnrichmentAnalysis()
 all_genes = goanalysis.get_all_genes_in_clustering_df(clustering_vis_obj.clustering_df)
 all_genes_in_genome = goanalysis.get_all_genes_in_genome()
 
 
-#%%
 df_go, df_go_exemplar = go_enrichment_analysis.run_go_enrichment_analysis_and_filtering_multiple_clusters(
     clustering_df=clustering_vis_obj.clustering_df,
     background_gene_list=all_genes_in_genome,
@@ -471,9 +496,6 @@ df_go, df_go_exemplar = go_enrichment_analysis.run_go_enrichment_analysis_and_fi
     pval=0.05,
     GO_type="BP"
 )
-
-#%%
-
 
 #%% Do GO analysis
 from submarlin_postprocessing.goanalysis import *
@@ -663,50 +685,162 @@ plt.show()
 ###############################
 #%% START COMMENT OUT
 ################################
-#%% Divisome
-plt.style.use('umap_grid.mplstyle')
-# query = "Gene.str.contains('fts')"
-# Query genes in the list filepaths.genes_divisome
-# query = "Gene.isin(" + str(filepaths.genes_divisome) + ")"
+
+
+
 query = "Gene.str.contains('rps') or Gene.str.contains('rpl')"
-# query = 'Gene.isin(["rpsL", "rpsG", "rplC", "rplD", "rplW", "rplB", "rplA", "rplV", "rplP", "rplO", "rplN", "rplM", "rplJ", "rplK", "rplI", "rplH", "rplF", "rplE", "rplD", "rplC", "rpsS", "rpsR", "rpsQ", "rpsP", "rpsO", "rpsN", "rpsM", "rpsL", "rpsK", "rpsJ", "rpsI", "rpsH", "rpsG"])'
-_ = clustering_viz.plot_umap_variables(
-    clustering_vis_obj,
-    query=query,
-    cluster_level='L3'
-)
-plt.show()
-plt.close()
-plt.style.use('default')
-#%% Divisome
-plt.style.use('umap_grid.mplstyle')
-# query = "Gene.str.contains('fts')"
-# Query genes in the list filepaths.genes_divisome
-query = "Gene.isin(" + str(filepaths.genes_divisome) + ")"
-# query = "Gene.str.contains('rps') or Gene.str.contains('rpl')"
-# query = 'Gene.isin(["rpsL", "rpsG", "rplC", "rplD", "rplW", "rplB", "rplA", "rplV", "rplP", "rplO", "rplN", "rplM", "rplJ", "rplK", "rplI", "rplH", "rplF", "rplE", "rplD", "rplC", "rpsS", "rpsR", "rpsQ", "rpsP", "rpsO", "rpsN", "rpsM", "rpsL", "rpsK", "rpsJ", "rpsI", "rpsH", "rpsG"])'
-_ = clustering_viz.plot_umap_variables(
-    clustering_vis_obj,
-    query=query,
-    cluster_level='L3'
-)
-plt.show()
-plt.close()
-plt.style.use('default')
+query = "Gene.isin(" + str(filepaths.genes_replication) + ")"
+query = "Gene.isin(" + str(filepaths.genes_elongasome) + ")"
+query = "Gene.isin(" + str(filepaths.genes_teichoic_acid) + ")"
 
-#%% fla-che
-plt.style.use('umap_grid.mplstyle')
+filtering_mask = clustering_vis_obj.clustering_an_df.obs.query(query).index
+
+umap = clustering_vis_obj.clustering_an_df.obsm['X_umap']
+umap_filtered = clustering_vis_obj.clustering_an_df[filtering_mask, :].obsm['X_umap']
+
+mosaic = [
+    ['divisome', 'teichoic'],
+    ['replication', 'ribosome']
+]
+
+# 'Divisome' on bottom left
+# Place the label in the bottom left corner (relative axes coordinates)
+def plot_umap_highlight(
+    query,
+    ax,
+    text_kwargs,
+    scatter_all_kwargs={},
+    scatter_highlight_kwargs={},
+):
+    """
+    Plots UMAP points, highlighting those matching the query.
+
+    Parameters
+    ----------
+    query : str
+        Query string to filter genes.
+    ax : matplotlib.axes.Axes
+        The axis to plot on.
+    label : str
+        Label to display on the plot.
+    text_kwargs : dict, optional
+        Additional keyword arguments for ax.text.
+    scatter_all_kwargs : dict, optional
+        Additional keyword arguments for ax.scatter for all points.
+    scatter_highlight_kwargs : dict, optional
+        Additional keyword arguments for ax.scatter for highlighted points.
+    """
+    filtering_mask = clustering_vis_obj.clustering_an_df.obs.query(query).index
+    umap = clustering_vis_obj.clustering_an_df.obsm['X_umap']
+    umap_filtered = clustering_vis_obj.clustering_an_df[filtering_mask, :].obsm['X_umap']
+
+    ax.text(**text_kwargs)
+    ax.scatter(
+        umap[:, 0], umap[:, 1],
+        color='lightgray', s=3, alpha=0.5,
+        rasterized=True,
+        **scatter_all_kwargs
+    )
+    ax.scatter(
+        umap_filtered[:, 0], umap_filtered[:, 1],
+        color='red', s=4, alpha=1,
+        rasterized=True,
+        **scatter_highlight_kwargs
+    )
+
+fig, axs = plt.subplot_mosaic(mosaic, figsize=(2, 2), constrained_layout=True)
+plot_umap_highlight(
+    query = "Gene.isin(" + str(filepaths.genes_divisome) + ")",
+    ax=axs['divisome'],
+    text_kwargs={'x': 0.01, 'y': 0.1, 's': 'Divisome', 'transform': axs['divisome'].transAxes, 'ha': 'left', 'va': 'bottom'},
+)
+
+plot_umap_highlight(
+    query = "Gene.isin(" + str(filepaths.genes_teichoic_acid) + ")",
+    ax=axs['teichoic'],
+    text_kwargs={'x': 0.01, 'y': 0.1, 's': 'Teichoic acid\nsynthesis', 'transform': axs['teichoic'].transAxes, 'ha': 'left', 'va': 'bottom'},
+)
+
+plot_umap_highlight(
+    query = "Gene.isin(" + str(filepaths.genes_replication) + ")",
+    ax=axs['replication'],
+    text_kwargs={'x': 0.01, 'y': 0.1, 's': 'DNA\nreplication', 'transform': axs['replication'].transAxes, 'ha': 'left', 'va': 'bottom'},
+)
+
+plot_umap_highlight(
+    query = "Gene.str.contains('rps') or Gene.str.contains('rpl')",
+    ax=axs['ribosome'],
+    text_kwargs={'x': 0.01, 'y': 0.1, 's': 'Ribosome', 'transform': axs['ribosome'].transAxes, 'ha': 'left', 'va': 'bottom'},
+)   
+
+# Remove frame and ticks
+for ax in axs.values():
+    ax.set_frame_on(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+fig.supylabel('UMAP 2', x=-.02, ha='center', va='center')
+fig.supxlabel('UMAP 1', y=0.0, ha='center', va='center')
+# fig.savefig(
+#     filepaths.figures_savepath / 'clustering/umap_highlight_divisome_teichoic_replication_ribosome.png',
+#     dpi=600,
+#     pad_inches=0,
+#     bbox_inches='tight',
+# )
+
 query = "Gene.isin(" + str(filepaths.genes_fla_che) + ")"
+query = "Gene.isin(" + str(filepaths.genes_elongasome) + ")"
+query = "Gene.isin(" + str(filepaths.genes_segregation) + ")"
+#%% With phenotype colormap
+clustering_vis_obj.plot_metadata
+#%%
+umap = clustering_vis_obj.clustering_an_df.obsm['X_umap']
 
-_ = clustering_viz.plot_umap_variables(
-    clustering_vis_obj,
-    query=query,
-    cluster_level='L3'
-)
-plt.show()
-plt.close()
-plt.style.use('default')
+mosaic = [
+    ['width', 'length'],
+    ['growth_rate', 'sep_disp']
+]
 
+fig, axs = plt.subplot_mosaic(mosaic, figsize=(4, 4), constrained_layout=True)
+
+def plot_umap_scatter(ax, key, clustering_vis_obj, umap):
+    plot_metadata_row = clustering_vis_obj.plot_metadata.loc[key]
+    ax.scatter(
+        umap[:, 0], umap[:, 1],
+        c=clustering_vis_obj.clustering_df[plot_metadata_row['col_name_last_t']],
+        cmap='coolwarm',
+        vmin=plot_metadata_row['vmin_plot'],
+        vmax=plot_metadata_row['vmax_plot'],
+        rasterized=True,
+        s=4, alpha=0.8,
+    )
+    ax.set_title(
+        plot_metadata_row['title'].split('(')[0].strip() +
+        ' (' + plot_metadata_row['short_label'] + ')',
+        fontsize=7,
+        y=0.92
+    )
+
+for key in ['width', 'length', 'growth_rate', 'sep_disp']:
+    plot_umap_scatter(axs[key], key, clustering_vis_obj, umap)
+
+# Remove frame and ticks
+for ax in axs.values():
+    ax.set_frame_on(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+fig.supylabel('UMAP 2', x=0, ha='center', va='center', fontsize=7)
+fig.supxlabel('UMAP 1', y=0.01, ha='center', va='center', fontsize=7)
+
+# fig.savefig(
+#     filepaths.figures_savepath / 'clustering/umap_scatter_phenotypes.png',
+#     dpi=600,
+#     pad_inches=0,
+#     bbox_inches='tight',
+# )
+
+#
 #%% Elongasome
 plt.style.use('umap_grid.mplstyle')
 # Query genes in the list filepaths.genes_divisome
@@ -720,44 +854,8 @@ plt.show()
 plt.close()
 plt.style.use('default')
 
-#%% Teichoic acid
-plt.style.use('umap_grid.mplstyle')
-# Query genes in the list filepaths.genes_divisome
-query = "Gene.isin(" + str(filepaths.genes_teichoic_acid) + ")"
-_ = clustering_viz.plot_umap_variables(
-    clustering_vis_obj,
-    query=query,
-    cluster_level='L3'
-)
-plt.show()
-plt.close()
-plt.style.use('default')
-#%% Segregation
-plt.style.use('umap_grid.mplstyle')
-# Query genes in the list filepaths.genes_divisome
-query = "Gene.isin(" + str(filepaths.genes_segregation) + ")"
-_ = clustering_viz.plot_umap_variables(
-    clustering_vis_obj,
-    query=query,
-    cluster_level='L3'
-)
-plt.show()
-plt.close()
-plt.style.use('default')
-#%% Replication
-plt.style.use('umap_grid.mplstyle')
-# Query genes in the list filepaths.genes_divisome
-query = "Gene.isin(" + str(filepaths.genes_replication) + ")"
-_ = clustering_viz.plot_umap_variables(
-    clustering_vis_obj,
-    query=query,
-    cluster_level='L3'
-)
-plt.show()
-plt.close()
-plt.style.use('default')
-
 #%%
+import scanpy as sc
 ribosome_clusters = {
     'L2': ['2', '4', '7', '14'],
     'L3': ['1', '7', '13', '14', '16', '21']
@@ -802,7 +900,7 @@ level = 'L3'
 categories_to_highlight = ribosome_clusters
 fig, ax = plt.subplots(figsize=(3,3))
 sc.pl.umap(
-    clustering_viz.clustering_an_df,
+    clustering_vis_obj.clustering_an_df,
     color=level,
     ax=ax,
     show=False,
@@ -816,11 +914,11 @@ for coll in ax.collections:
     except Exception:
         pass
 
-subset_mask = ~clustering_viz.clustering_an_df.obs[level].isin(categories_to_highlight[level])
+subset_mask = ~clustering_vis_obj.clustering_an_df.obs[level].isin(categories_to_highlight[level])
 
 ax.scatter(
-    clustering_viz.clustering_an_df.obsm['X_umap'][subset_mask, 0],
-    clustering_viz.clustering_an_df.obsm['X_umap'][subset_mask, 1],
+    clustering_vis_obj.clustering_an_df.obsm['X_umap'][subset_mask, 0],
+    clustering_vis_obj.clustering_an_df.obsm['X_umap'][subset_mask, 1],
     color='lightgray',
     alpha=1,
     s=30
@@ -830,122 +928,141 @@ ax.scatter(
 ax.set_xlabel(''); ax.set_ylabel(''); ax.set_title('')
 
 #%%
-narrow_island = clustering_viz.df_gene_cluster_mode.loc[lambda s_: s_.isin(['8', '6', '15'])].index.unique()
+import scanpy as sc
+narrow_island = clustering_vis_obj.df_gene_cluster_mode.loc[lambda s_: s_.isin(['8', '6', '15'])].index.unique()
 for gene in narrow_island:
     print(gene)
 
-#%%
-col_names = clustering_viz.plot_metadata['col_name_last_t'].values
-vmins = clustering_viz.plot_metadata['vmin_plot'].values
-vmaxs = clustering_viz.plot_metadata['vmax_plot'].values
-center = clustering_viz.plot_metadata['median_control'].values
+#%% HEATMAP WITH GENE NAMES
 
-plt.style.use('default')
-import matplotlib.colors
-L3_colors = clustering_viz.clustering_an_df.uns['L3_colors']
+def plot_heatmap_single_cluster_all_genes(
+    level='Lm',
+    cluster_number = '25'
+):
+    col_names = clustering_vis_obj.plot_metadata['col_name_last_t'].values
+    vmins = clustering_vis_obj.plot_metadata['vmin_plot'].values
+    vmaxs = clustering_vis_obj.plot_metadata['vmax_plot'].values
+    center = clustering_vis_obj.plot_metadata['median_control'].values
 
-level = 'Lm'
-cluster_number = '102'
+    plt.style.use('default')
+    import matplotlib.colors
+    L3_colors = clustering_vis_obj.clustering_an_df.uns['L3_colors']
 
-# cluster_color = L3_colors[int(cluster_number)]
-cluster_color = custom_palette[int(cluster_number)]
-single_color_cmap = matplotlib.colors.ListedColormap([cluster_color])
+    # cluster_color = L3_colors[int(cluster_number)]
+    cluster_color = custom_palette[int(cluster_number)]
+    single_color_cmap = matplotlib.colors.ListedColormap([cluster_color])
 
-n_grnas_per_gene = (
-    clustering_viz.clustering_df
-    .loc[lambda df_: df_[level] == cluster_number, 'Gene']
-    .value_counts()
-    .rename('n_grnas')
-    .astype(int)
-    # .sort_index()
-)
-
-df_heatmap = (
-    clustering_viz.clustering_df
-    .loc[lambda df_: df_[level] == cluster_number, list(col_names) + ['Gene', level]]
-    #  .loc[lambda df_: df_['Gene'].isin(
-    #     clustering_viz.df_gene_cluster_mode.loc[lambda s_: s_ == cluster_number].index),
-    #      list(col_names) + ['Gene', level]]
-    .astype({level: int})
-    .groupby('Gene')
-    .median()
-    .merge(
-        n_grnas_per_gene,
-        left_index=True,
-        right_index=True
+    n_grnas_per_gene = (
+        clustering_vis_obj.clustering_df
+        .loc[lambda df_: df_[level] == cluster_number, 'Gene']
+        .value_counts()
+        .rename('n_grnas')
+        .astype(int)
+        # .sort_index()
     )
-)
-df_heatmap
+
+    df_heatmap = (
+        clustering_vis_obj.clustering_df
+        .loc[lambda df_: df_[level] == cluster_number, list(col_names) + ['Gene', level]]
+        #  .loc[lambda df_: df_['Gene'].isin(
+        #     clustering_viz.df_gene_cluster_mode.loc[lambda s_: s_ == cluster_number].index),
+        #      list(col_names) + ['Gene', level]]
+        .astype({level: int})
+        .groupby('Gene')
+        .median()
+        .merge(
+            n_grnas_per_gene,
+            left_index=True,
+            right_index=True
+        )
+    )
+    df_heatmap
 
 
-cell_height = 0.3
-fig_height = cell_height * df_heatmap.shape[0]
+    cell_height = 0.2
+    fig_height = cell_height * df_heatmap.shape[0]
 
-fig, axs = plt.subplots(1, len(col_names)+3, figsize=(5,fig_height), gridspec_kw={'wspace': 0})
+    fig, axs = plt.subplots(1, len(col_names)+3, figsize=(2.2,fig_height), gridspec_kw={'wspace': 0})
 
-ax = axs[0]
-sns.heatmap(
-    data=df_heatmap[level].values.reshape(-1,1),
-    cmap=single_color_cmap,
-    cbar=False,
-    yticklabels=True,
-    xticklabels=False,
-    ax=ax
-)
-ax.set_yticklabels(df_heatmap.index, rotation=0, fontsize=12)
-
-for i, col_name in enumerate(col_names):    
-    ax = axs[i+1]
+    ax = axs[0]
     sns.heatmap(
-        data=df_heatmap[col_name].values.reshape(-1,1),
-        vmin=vmins[i], vmax=vmaxs[i], center=center[i], 
-        cmap='coolwarm', cbar=False,
-        yticklabels=False,
+        data=df_heatmap[level].values.reshape(-1,1),
+        cmap=single_color_cmap,
+        cbar=False,
+        yticklabels=True,
+        xticklabels=False,
         ax=ax
     )
-    ax.set_xticklabels([clustering_viz.plot_metadata.iloc[i]['short_label']], rotation=0, fontsize=16)
 
-ax = axs[-2]
-# Empty plot for spacing
-sns.heatmap(
-    data=np.empty((df_heatmap.shape[0], 1))*np.nan,
-    vmin=0, vmax=1,
-    cmap='coolwarm', cbar=False,
-    yticklabels=False,
-    xticklabels=False,
-    ax=ax
-)
+    ax.text(
+        x=0.5, y=0.5, s=str(cluster_number),
+        transform=ax.transAxes,
+        ha='center', va='center',
+        fontsize=8, fontweight='bold', color='black'
+    )
+    ax.set_yticklabels(df_heatmap.index, rotation=0, fontsize=8)
 
-ax = axs[-1]
-sns.heatmap(
-    data=df_heatmap['n_grnas'].values.reshape(-1,1),
-    cmap='coolwarm', cbar=False,
-    yticklabels=False,
-    xticklabels=True,
-    ax=ax,
-    annot=df_heatmap['n_grnas'].values.reshape(-1,1),
-    fmt='d',
-    annot_kws={'fontsize':14, 'va':'center', 'color':'black'}
-)
-ax.set_xticklabels(['# gRNAs'], rotation=0, fontsize=16)
+    for i, col_name in enumerate(col_names):    
+        ax = axs[i+1]
+        sns.heatmap(
+            data=df_heatmap[col_name].values.reshape(-1,1),
+            vmin=vmins[i], vmax=vmaxs[i], center=center[i], 
+            cmap='coolwarm', cbar=False,
+            yticklabels=False,
+            ax=ax
+        )
+        ax.set_xticklabels([clustering_vis_obj.plot_metadata.iloc[i]['short_label']], rotation=0, fontsize=8)
 
-axs[3].set_title(f'Cluster {cluster_number}', fontsize=16)
+    ax = axs[-2]
+    # Empty plot for spacing
+    sns.heatmap(
+        data=np.empty((df_heatmap.shape[0], 1))*np.nan,
+        vmin=0, vmax=1,
+        cmap='coolwarm', cbar=False,
+        yticklabels=False,
+        xticklabels=False,
+        ax=ax
+    )
+
+    ax = axs[-1]
+    sns.heatmap(
+        data=df_heatmap['n_grnas'].values.reshape(-1,1),
+        cmap='coolwarm', cbar=False,
+        yticklabels=False,
+        xticklabels=True,
+        ax=ax,
+        annot=df_heatmap['n_grnas'].values.reshape(-1,1),
+        fmt='d',
+        annot_kws={'fontsize':9, 'va':'center', 'color':'black', 'fontweight':'bold'},
+    )
+    ax.set_xticklabels(['# gRNAs'], rotation=0, fontsize=8)
+    # axs[3].set_title(f'Cluster {cluster_number}', fontsize=8)
+    fig.savefig(
+        filepaths.figures_savepath / f'clustering/heatmap_cluster_{cluster_number}_all_genes.png',
+        dpi=600,
+        pad_inches=0,
+        bbox_inches='tight'
+    )
+
+plot_heatmap_single_cluster_all_genes(level='L3', cluster_number='17')
+plot_heatmap_single_cluster_all_genes(level='L3', cluster_number='24')
+plot_heatmap_single_cluster_all_genes(level='L3', cluster_number='25')
 #%% Heatmap of all sgRNAs
 fig, axs = plt.subplots(1, len(col_names)+1, figsize=(5,10), gridspec_kw={'wspace': 0})
 for i, col_name in enumerate(col_names):
     ax = axs[i]
     sns.heatmap(
-        data=clustering_viz.clustering_df[col_name].values.reshape(-1,1),
+        data=clustering_vis_obj.clustering_df[col_name].values.reshape(-1,1),
         vmin=vmins[i], vmax=vmaxs[i], center=center[i], 
         cmap='coolwarm', cbar=False,
         yticklabels=False,
         ax=ax
     )
-    ax.set_xticklabels([clustering_viz.plot_metadata.iloc[i]['short_label']], rotation=0, fontsize=16)
+    ax.set_xticklabels([clustering_vis_obj.plot_metadata.iloc[i]['short_label']], rotation=0, fontsize=16)
 
 ax = axs[-1]
 sns.heatmap(
-    data=clustering_viz.clustering_df['L0'].astype(int).values.reshape(-1,1),
+    data=clustering_vis_obj.clustering_df['L0'].astype(int).values.reshape(-1,1),
     cmap='tab10', cbar=False,
     yticklabels=False,
     xticklabels=False,
@@ -953,7 +1070,7 @@ sns.heatmap(
 )
 
 #%%
-clustering_viz.clustering_df[clustering_viz.clustering_df['L3'] == '17']['Gene']
+clustering_vis_obj.clustering_df[clustering_vis_obj.clustering_df['L3'] == '17']['Gene']
 
 # %%
 cluster_n_bsub = '0'
