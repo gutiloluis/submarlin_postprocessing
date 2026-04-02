@@ -115,7 +115,7 @@ exp_group = 'lLAG10'
 df = metadata_dfs[exp_group]
 metadata_var = sample_variant_kymos.filter_metadata(
     df,
-    4381,
+    4459,
 )
 sample_variant_kymos.show_multiple_kymos(
     metadata=metadata_var,
@@ -362,6 +362,38 @@ sample_variant_kymos.show_last_timepoints_figure(
 #%%
 gene='fliE'
 variant_id=4371
+exp_key = 'lLAG10'
+sample_variant_kymos.show_last_timepoints_figure(
+    exp_key=exp_key, gene=gene, variant_id=variant_id, metadata_dfs=metadata_dfs,
+    save_figure=True, show_scale=False, title=gene
+)
+#%%
+gene='flgC'
+variant_id=4367
+exp_key = 'lLAG10'
+sample_variant_kymos.show_last_timepoints_figure(
+    exp_key=exp_key, gene=gene, variant_id=variant_id, metadata_dfs=metadata_dfs,
+    save_figure=True, show_scale=False, title=gene
+)
+#%%
+gene='fliI'
+variant_id=4382
+exp_key = 'lLAG10'
+sample_variant_kymos.show_last_timepoints_figure(
+    exp_key=exp_key, gene=gene, variant_id=variant_id, metadata_dfs=metadata_dfs,
+    save_figure=True, show_scale=False, title=gene
+)
+#%%
+gene='sigD'
+variant_id=4456
+exp_key = 'lLAG10'
+sample_variant_kymos.show_last_timepoints_figure(
+    exp_key=exp_key, gene=gene, variant_id=variant_id, metadata_dfs=metadata_dfs,
+    save_figure=True, show_scale=False, title=gene
+)
+#%%
+gene='swrB'
+variant_id=4459
 exp_key = 'lLAG10'
 sample_variant_kymos.show_last_timepoints_figure(
     exp_key=exp_key, gene=gene, variant_id=variant_id, metadata_dfs=metadata_dfs,
