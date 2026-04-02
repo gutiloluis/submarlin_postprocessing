@@ -35,13 +35,13 @@ exp_groups = ['lLAG08', 'lLAG10']
 ## Figure 2
 ############################################################
 # Histograms
-long_label = filepaths.long_labels
-# Show all variables histograms (2x2 grid of plots)
-steady_state_viz.show_all_variables_histograms(
-    dfs,
-    label_dict=long_label,
-    save_figure=True
-)
+# long_label = filepaths.long_labels
+# # Show all variables histograms (2x2 grid of plots)
+# steady_state_viz.show_all_variables_histograms(
+#     dfs,
+#     label_dict=long_label,
+#     save_figure=True
+# )
 # steady_state_viz.show_all_histograms(dfs, label_dict=long_label)
 #%% Mismatch plots
 # steady_state_viz.plot_mismatch_panels_multiple_genes(
@@ -79,8 +79,18 @@ steady_state_viz.show_all_variables_histograms(
         'lLAG10': dfp_b.loc[lambda df_: ~df_['opLAG2_id'].isna(), :],
     },
     label_dict=filepaths.long_labels_no_est,
-    save_figure=False
+    save_figure=True,
+    dark_background=True,
+    log=True,
 )
+#%%
+fig, ax = plt.subplots(1,1, figsize=(3,3))
+steady_state_viz.show_variable_histogram(
+        df=dfp_b.loc[lambda df_: ~df_['opLAG2_id'].isna(), :], variable='Length',
+        label_dict=filepaths.long_labels_no_est, ax=ax, color='C0', dark_background=False, log=False)
+# Set a
+ax.set_ylim(0,500)
+ax.set_xlim(0,5)
 #%% Figure 2: Mismatch panel
 highlight_grnas = {
     # 'controls': [8166, 8296, 8321],

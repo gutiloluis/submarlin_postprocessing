@@ -274,8 +274,13 @@ def show_variable_histogram(
     if title is not None:
         ax.set_title(title)
     df_controls = df.loc[df['Category'] == 'control', variable]
-    control_color = 'black' if not dark_background else 'white'
-    _ = ax.hist(df_controls, bins=30, histtype='step', color=control_color, label='Controls', log=log)
+    if dark_background:
+        control_color = '#B0B0B0'
+        control_alpha = 0.55
+    else:
+        control_color = 'black'
+        control_alpha = 0.4
+    _ = ax.hist(df_controls, bins=30, histtype='step', color=control_color, label='Controls', log=log, alpha=control_alpha)
     ax.tick_params(axis='both', which='both', pad=1)
     if dark_background:
         ax.set_facecolor('#111111')
@@ -383,7 +388,8 @@ def plot_mismatch_panel_single_gene(
     y_var: str,
     label_dict: dict,
     ax: plt.Axes,
-    color: str = None
+    color: str = None,
+    dark_background: bool = False,
 ) -> None:
     df_gene = df.loc[df['Gene'] == gene, [x_var, y_var]]
     
@@ -393,19 +399,34 @@ def plot_mismatch_panel_single_gene(
         color=color,
         alpha = 0.7,
     )
-
     df_controls = df.loc[df['Category'] == 'control', [x_var, y_var]]
+    if dark_background:
+        ctrl_color = '#B0B0B0'
+        ctrl_alpha = 0.55
+    else:
+        ctrl_color = 'black'
+        ctrl_alpha = 0.4
     ax.errorbar(
         df_controls[x_var].mean(),
         df_controls[y_var].mean(),
         xerr=3*df_controls[x_var].std(),
         yerr=3*df_controls[y_var].std(),
         fmt='o',
-        color='black',
+        color=ctrl_color,
+        alpha=ctrl_alpha,
         # Marker size
         markersize=3,
         linewidth=1,
     )
+
+    # Axis styling for dark background
+    if dark_background:
+        ax.set_facecolor('#111111')
+        for spine in ax.spines.values():
+            spine.set_color('white')
+        ax.xaxis.label.set_color('white')
+        ax.yaxis.label.set_color('white')
+        ax.tick_params(colors='white')
 
     ax.set_ylabel(label_dict[y_var])
     # ax.set_title(gene)
@@ -415,14 +436,17 @@ def plot_mismatch_panels_multiple_genes(
     label_dict: dict,
     save_figure: bool = False,
     highlight_grnas: bool = False,
+    dark_background: bool = False,
 ):
     fig, axs = plt.subplots(2, 1, figsize=(2.3/1.5, 2.3), sharex=True)
+    if dark_background:
+        fig.patch.set_facecolor('#111111')
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='rplQ',
         x_var='Instantaneous Growth Rate: Volume',
         y_var='Length',
         label_dict=label_dict,
-        ax=axs[0], color='C0'
+        ax=axs[0], color='C0', dark_background=dark_background
     )
 
     plot_mismatch_panel_single_gene(
@@ -430,21 +454,21 @@ def plot_mismatch_panels_multiple_genes(
         x_var='Instantaneous Growth Rate: Volume',
         y_var='Length',
         label_dict=label_dict,
-        ax=axs[0], color='C1'
+        ax=axs[0], color='C1', dark_background=dark_background
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='pyk',
         x_var='Instantaneous Growth Rate: Volume',
         y_var='Length',
         label_dict=label_dict,
-        ax=axs[0], color='C2'
+        ax=axs[0], color='C2', dark_background=dark_background
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='murB',
         x_var='Instantaneous Growth Rate: Volume',
         y_var='Width',
         label_dict=label_dict,
-        ax=axs[1], color='C4'
+        ax=axs[1], color='C4', dark_background=dark_background
     )    
 
     if highlight_grnas is not None:
@@ -463,20 +487,22 @@ def plot_mismatch_panels_multiple_genes(
                     ['Instantaneous Growth Rate: Volume', 'Length', 'Width']
                 ]
                 color = color_map.get(gene, 'red')
+                edgecol = 'black'
                 if gene != 'murB':
                     axs[0].scatter(
                         df_grna['Instantaneous Growth Rate: Volume'],
                         df_grna['Length'],
                         s=12,
-                        edgecolor='black',
+                        edgecolor=edgecol,
                         facecolor=color,
                         # linewidth=1.5,
                     )
                     if gene == 'rplQ':
+                        anncol = 'black' if not dark_background else 'white'
                         axs[0].annotate(
                             str(idx + 1),
                             (df_grna['Instantaneous Growth Rate: Volume'].values[0], df_grna['Length'].values[0]),
-                            color='black',
+                            color=anncol,
                             fontsize=7,
                             ha='right',
                             va='center',
@@ -486,10 +512,11 @@ def plot_mismatch_panels_multiple_genes(
                             textcoords='offset points'
                         )
                     elif gene == 'ftsW':
+                        anncol = 'black' if not dark_background else 'white'
                         axs[0].annotate(
                             str(idx + 1),
                             (df_grna['Instantaneous Growth Rate: Volume'].values[0], df_grna['Length'].values[0]),
-                            color='black',
+                            color=anncol,
                             fontsize=7,
                             ha='left',  # Change to 'left' to show on the right of the point
                             va='center',
@@ -499,21 +526,23 @@ def plot_mismatch_panels_multiple_genes(
                             textcoords='offset points'
                         )
                 if gene == 'murB':
+                    edgecol = 'black'
                     axs[1].scatter(
                     df_grna['Instantaneous Growth Rate: Volume'],
                     df_grna['Width'],
                     s=12,
-                    edgecolor='black',
+                    edgecolor=edgecol,
                     facecolor=color,
                     # linewidth=1.5,
                     )
+                    anncol = 'black' if not dark_background else 'white'
                     axs[1].annotate(
                         str(idx + 1),
                         (
                             df_grna['Instantaneous Growth Rate: Volume'].values[0],
                             df_grna['Width'].values[0]
                         ),
-                        color='black',
+                        color=anncol,
                         fontsize=7,
                         ha='right',
                         va='center',
@@ -544,10 +573,18 @@ def plot_mismatch_panels_multiple_genes(
     fig.align_ylabels([axs[0], axs[1]])
     fig.tight_layout(pad=1, h_pad=0.5, w_pad=0.05)
     if save_figure:
-        plt.savefig(
-            filepaths.headpath / 'bmarlin_manuscript/figure_2/mismatch_panels_annotated.png',
-            transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
-        )
+        # append '_dark' suffix when saving dark-background version
+        out_path = filepaths.headpath / 'bmarlin_manuscript/figure_2/mismatch_panels_annotated.png'
+        try:
+            from pathlib import Path
+            if dark_background and isinstance(out_path, Path):
+                out_path = out_path.with_name(out_path.stem + '_dark' + out_path.suffix)
+        except Exception:
+            pass
+        if dark_background:
+            plt.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600, facecolor=fig.get_facecolor())
+        else:
+            plt.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600)
 
 def bivariate_plot(
     df,
@@ -556,11 +593,24 @@ def bivariate_plot(
     ax,
     label_dict,
     color='black',
+    dark_background: bool = False,
     **kwargs
 ):
     ax.scatter(x=df[x_var], y=df[y_var], color=color, **kwargs)
     ax.set_xlabel(label_dict[x_var])
     ax.set_ylabel(label_dict[y_var])
+    if dark_background:
+        ax.set_facecolor('#111111')
+        for spine in ax.spines.values():
+            spine.set_color('white')
+            spine.set_edgecolor('white')
+        ax.xaxis.label.set_color('white')
+        ax.yaxis.label.set_color('white')
+        ax.tick_params(colors='white')
+        try:
+            ax.patch.set_facecolor('#111111')
+        except Exception:
+            pass
 
 def bivariate_plot_with_subsets(
     df,
@@ -574,26 +624,48 @@ def bivariate_plot_with_subsets(
     color_all='black',
     color_subset='blue',
     color_controls='red',
+    dark_background: bool = False,
     **kwargs
 ):
-    bivariate_plot(df=df, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_all, s=2, alpha=0.5,**kwargs)
-    bivariate_plot(df=df_subset, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_subset, s=25, alpha=0.7, edgecolor='black', **kwargs)
+    # background points use a subtle gray in dark mode
+    color_all_actual = '#555555' if dark_background else color_all
+    alpha_all = 0.5 if dark_background else 0.5
+    bivariate_plot(df=df, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_all_actual, s=2, alpha=alpha_all, dark_background=dark_background, **kwargs)
+    # keep subset point edges black even in dark mode
+    subset_edge = 'black'
+    bivariate_plot(df=df_subset, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_subset, s=25, alpha=0.7, edgecolor=subset_edge, dark_background=dark_background, **kwargs)
     texts = []
     for _, row in df_annotate.iterrows():
+        txtcol = 'white' if dark_background else 'black'
         texts.append(
             ax.text(x=row[x_var], y=row[y_var], s=row['Gene'],
-                ha='center', va='bottom', fontsize=8, color='black')
+                ha='center', va='bottom', fontsize=8, color=txtcol)
         )
     _= adjust_text(
         texts,
-        arrowprops=dict(arrowstyle='->', color='black', lw=1.5),
+        arrowprops=dict(arrowstyle='->', color=('white' if dark_background else 'black'), lw=1.5),
         ax=ax,
         # force_points=0.01,
         # force_text=0.01,
         # force_pull=0.001,
         min_arrow_len=1,
     )
-    bivariate_plot(df=df_controls, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_controls, alpha=0.5, s=2, **kwargs)
+    # controls: subtle gray in dark mode, with slightly higher alpha; remove edge for controls
+    control_color_actual = '#B0B0B0' if dark_background else color_controls
+    control_alpha = 0.55 if dark_background else 0.5
+    bivariate_plot(
+        df=df_controls,
+        x_var=x_var,
+        y_var=y_var,
+        ax=ax,
+        label_dict=label_dict,
+        color=control_color_actual,
+        alpha=control_alpha,
+        s=2,
+        edgecolors='none',
+        dark_background=dark_background,
+        **kwargs
+    )
 
 
 
@@ -608,18 +680,24 @@ def show_volcano_plot(
     var_id,
     ax,
     color_highlight: str = 'C0',
+    dark_background: bool = False,
 ):
     var = plot_metadata.loc[var_id,'col_name_steady_state']
     # var = ''
+    # background (non-highlight, non-control) points
+    base_color = '#555555' if dark_background else 'gray'
+    base_alpha = 0.5 if dark_background else 0.4
     ax.scatter(
         x=dfp[var],
         y=dfp['nlog10_fdr: ' + var],
         s=5,
-        color='gray',
-        alpha=0.4,
+        color=base_color,
+        alpha=base_alpha,
     )
     
     if len(gene_list_to_highlight) > 0:
+        # keep colored highlight edges black on both light and dark backgrounds
+        edgecol = 'black'
         ax.scatter(
             x = dfp.loc[lambda df_: df_['Gene'].isin(gene_list_to_highlight), var],
             y = dfp.loc[lambda df_: df_['Gene'].isin(gene_list_to_highlight), 'nlog10_fdr: ' + var],
@@ -627,27 +705,49 @@ def show_volcano_plot(
             s=25,
             color=color_highlight,
             alpha=0.7,
-            edgecolor='black',
+            edgecolor=edgecol,
         )
 
+    # controls: use subtle gray in dark mode
+    if dark_background:
+        ctrl_scatter_color = '#B0B0B0'
+        ctrl_alpha = 0.55
+    else:
+        ctrl_scatter_color = 'black'
+        ctrl_alpha = 0.4
     ax.scatter(
         x = dfp.loc[lambda df_: df_['Category'] == 'control', var],
         y = dfp.loc[lambda df_: df_['Category'] == 'control', 'nlog10_fdr: ' + var],
         s=5,
-        color='black',
-        alpha=0.4,
+        color=ctrl_scatter_color,
+        alpha=ctrl_alpha,
     )
     
 
     # Draw vertical line at plus minus 3 stds
-    ax.axvline(x = df_control_stats.loc['mean_plus_3std', var] , linestyle='--', color='black')
-    ax.axvline(x = df_control_stats.loc['mean_minus_3std', var] , linestyle='--', color='black')
+    line_color = 'black' if not dark_background else 'white'
+    ax.axvline(x = df_control_stats.loc['mean_plus_3std', var] , linestyle='--', color=line_color)
+    ax.axvline(x = df_control_stats.loc['mean_minus_3std', var] , linestyle='--', color=line_color)
 
     # Draw horizontal line at p-value = 0.05
-    ax.axhline(y = -np.log10(0.05), linestyle='--', color='black')
+    ax.axhline(y = -np.log10(0.05), linestyle='--', color=line_color)
     # plt.xlim([2,4])
     ax.set_xlabel(plot_metadata.loc[var_id, 'title'])
     ax.set_ylabel('$-\log_{10}(\mathrm{FDR})$')
+    if dark_background:
+        # axis text and ticks
+        ax.set_facecolor('#111111')
+        for spine in ax.spines.values():
+            spine.set_color('white')
+            spine.set_edgecolor('white')
+        ax.xaxis.label.set_color('white')
+        ax.yaxis.label.set_color('white')
+        ax.tick_params(colors='white')
+        # ensure grid/lines are visible on dark
+        try:
+            ax.patch.set_facecolor('#111111')
+        except Exception:
+            pass
     
 
 ##########################
@@ -657,6 +757,9 @@ def show_volcano_and_bivariate_plots(
     df: pd.DataFrame,
     df_control_stats: pd.DataFrame,
     plot_metadata: pd.DataFrame,
+    save_figure: bool = False,
+    dark_background: bool = False,
+    filename: str = filepaths.figures_savepath / 'figure_2/volcano_bivariate_plots.png',
 ):
     mosaic = [
         ['v_length', 'v_sep_disp', 'v_width'],
@@ -668,6 +771,8 @@ def show_volcano_and_bivariate_plots(
         # figsize=(7.2, 7.2*2/3),
         figsize=(5, 7.2*2/3*2/3),
     )
+    if dark_background:
+        fig.patch.set_facecolor('#111111')
 
     show_volcano_plot(
         dfp = df, #p-values df
@@ -677,7 +782,9 @@ def show_volcano_and_bivariate_plots(
         var_id = 'length',
         ax = axs['v_length'],
         color_highlight='C0',
+        dark_background=dark_background,
     )
+    anncol = 'C0' if not dark_background else '#4FD1FF'
     axs['v_length'].annotate(
         'Divisome',
         # Do it a little below the top right
@@ -687,9 +794,10 @@ def show_volcano_and_bivariate_plots(
         va='top',
         fontsize=7,
         # Set font color to 'C0'
-        color='C0',
+        color=anncol,
     )
 
+    txtcol = 'black' if not dark_background else 'white'
     axs['v_length'].annotate(
         'Controls',
         # Do it a little below the top right
@@ -699,7 +807,7 @@ def show_volcano_and_bivariate_plots(
         va='bottom',
         fontsize=7,
         # Set font color to 'C0'
-        color='black',
+        color=txtcol,
     )
 
     show_volcano_plot(
@@ -710,6 +818,7 @@ def show_volcano_and_bivariate_plots(
         var_id = 'width',
         ax = axs['v_width'],
         color_highlight='C4',
+        dark_background=dark_background,
     )
     axs['v_width'].set_ylabel('')
     axs['v_width'].annotate(
@@ -721,7 +830,7 @@ def show_volcano_and_bivariate_plots(
         va='top',
         fontsize=7,
         # Set font color to 'C4'
-        color='C4',
+        color=('C4' if not dark_background else 'C4'),
     )
 
 
@@ -733,6 +842,7 @@ def show_volcano_and_bivariate_plots(
         var_id = 'sep_disp',
         ax = axs['v_sep_disp'],
         color_highlight='C2',
+        dark_background=dark_background,
     )
     axs['v_sep_disp'].set_ylabel('')
     axs['v_sep_disp'].annotate(
@@ -744,7 +854,7 @@ def show_volcano_and_bivariate_plots(
         va='top',
         fontsize=7,
         # Set font color to 'C2'
-        color='C2',
+        color=('C2' if not dark_background else 'C2'),
     )
 
     bivariate_plot_with_subsets(
@@ -768,6 +878,7 @@ def show_volcano_and_bivariate_plots(
         color_all = 'gray',
         color_subset = 'C0',
         color_controls = 'black',
+        dark_background=dark_background,
     )
     axs['b_length'].set_ylim(None, 6.5)
 
@@ -793,6 +904,7 @@ def show_volcano_and_bivariate_plots(
         color_all = 'gray',
         color_subset = 'C4',
         color_controls = 'black',
+        dark_background=dark_background,
     )
     # Set yticks to [1.15, 1.20, 1.25, 1.30]
     axs['b_width'].set_yticks([1.15, 1.20, 1.25, 1.30])
@@ -821,14 +933,26 @@ def show_volcano_and_bivariate_plots(
         color_all = 'gray',
         color_subset = 'C2',
         color_controls = 'black',
+        dark_background=dark_background,
     )
     axs['b_sep_disp'].set_xlim(2, 6.5)
 
     fig.tight_layout(pad=0, h_pad=0.4, w_pad=0.2)
-    # fig.savefig(
-    #     filepaths.figures_savepath / 'figure_2/volcano_bivariate_plots.png',
-    #     transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
-    # )
+    if save_figure:
+        out_path = filename
+        try:
+            from pathlib import Path
+            if dark_background and isinstance(out_path, Path):
+                out_path = out_path.with_name(out_path.stem + '_dark' + out_path.suffix)
+        except Exception:
+            # fallback to string handling
+            import os
+            root, ext = os.path.splitext(str(out_path))
+            out_path = root + ('_dark' if dark_background else '') + ext
+        if dark_background:
+            fig.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600, facecolor=fig.get_facecolor())
+        else:
+            fig.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600)
 
 #%% ####################
 # Violin and strip plots
@@ -1013,6 +1137,7 @@ def show_volcano_plot_old_v2(
     subset_gene_list: list[str] = None,
     label_dict: dict = None,
     save_figure: bool = False,
+    dark_background: bool = False,
     
 ):
     df_stats.plot(
@@ -1072,10 +1197,17 @@ def show_volcano_plot_old_v2(
     ax.set_xlabel(label_dict[var] if label_dict is not None else var)
     
     if save_figure:
-        plt.savefig(
-            filepaths.headpath / 'bmarlin_manuscript/figure_2/length_volcano_plot.png',
-            transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
-        )
+        out_path = filepaths.headpath / 'bmarlin_manuscript/figure_2/length_volcano_plot.png'
+        try:
+            from pathlib import Path
+            if dark_background and isinstance(out_path, Path):
+                out_path = out_path.with_name(out_path.stem + '_dark' + out_path.suffix)
+        except Exception:
+            pass
+        if dark_background:
+            plt.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600, facecolor=plt.gcf().get_facecolor())
+        else:
+            plt.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600)
 
 def show_volcano_plot_old(
     df_stats: pd.DataFrame,
