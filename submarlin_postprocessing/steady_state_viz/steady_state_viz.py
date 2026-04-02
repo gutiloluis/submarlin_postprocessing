@@ -223,7 +223,9 @@ def show_n_observations_histogram(
         df: pd.DataFrame, 
         ax: plt.Axes,
         title: str,
-        color: str = None,
+    color: str = None,
+    dark_background: bool = False,
+    log: bool = False,
     ) -> None:
     """
     Show a histogram of the number of observations per gene.
@@ -235,10 +237,20 @@ def show_n_observations_histogram(
         .agg({'N Observations': 'sum'})
     )
 
-    _ = ax.hist(df_obs_per_gene['N Observations'], bins=30, histtype='step', color=color)
+    plot_color = color if color is not None else ('C0' if not dark_background else 'w')
+    _ = ax.hist(df_obs_per_gene['N Observations'], bins=30, histtype='step', color=plot_color, log=log)
     ax.set_xlabel('# Lineages')
     ax.set_ylabel('# Gene Targets')
     ax.set_title(title)
+    if dark_background:
+        # tweak axis for dark background
+        ax.set_facecolor('#111111')
+        for spine in ax.spines.values():
+            spine.set_color('white')
+        ax.xaxis.label.set_color('white')
+        ax.yaxis.label.set_color('white')
+        ax.title.set_color('white')
+        ax.tick_params(colors='white')
 
 def show_variable_histogram(
         df: pd.DataFrame, 
@@ -246,22 +258,34 @@ def show_variable_histogram(
         label_dict: dict,
         ax: plt.Axes,
         title: str = None,
-        color: str = None,
+    color: str = None,
+    dark_background: bool = False,
+    log: bool = True,
     ) -> None:
     """
     Show a histogram of a variable.
     df: Steady state processed DataFrame.
     variable: Variable to plot.
     """
-    _ = ax.hist(df[variable], bins=30, histtype='step', color=color, log=True)
+    plot_color = color if color is not None else ('C0' if not dark_background else '#a6cee3')
+    _ = ax.hist(df[variable], bins=30, histtype='step', color=plot_color, log=log)
     ax.set_xlabel(label_dict[variable], labelpad=0)
     ax.set_ylabel('# sgRNAs', labelpad=0)
     if title is not None:
         ax.set_title(title)
-
     df_controls = df.loc[df['Category'] == 'control', variable]
-    _ = ax.hist(df_controls, bins=30, histtype='step', color='black', label='Controls', log=True)
+    control_color = 'black' if not dark_background else 'white'
+    _ = ax.hist(df_controls, bins=30, histtype='step', color=control_color, label='Controls', log=log)
     ax.tick_params(axis='both', which='both', pad=1)
+    if dark_background:
+        ax.set_facecolor('#111111')
+        for spine in ax.spines.values():
+            spine.set_color('white')
+        ax.xaxis.label.set_color('white')
+        ax.yaxis.label.set_color('white')
+        if title is not None:
+            ax.title.set_color('white')
+        ax.tick_params(colors='white')
     
 def show_all_histograms(
     dfs: dict[str, pd.DataFrame],
@@ -291,23 +315,39 @@ def show_all_variables_histograms(
         dfs: dict[str, pd.DataFrame],
         label_dict: dict,
         save_figure: bool = False,
-        filename: str = filepaths.headpath / 'bmarlin_manuscript/figure_2/histograms_variables.png'
+        filename: str = filepaths.headpath / 'bmarlin_manuscript/figure_2/histograms_variables.png',
+        dark_background: bool = False,
+        log: bool = True,
 ):
     fig, axs = plt.subplots(2, 2, figsize=(2.15, 2.15), sharex=False, sharey=False)
+    if dark_background:
+        fig.patch.set_facecolor('#111111')
+
+    # Preferred colors for dark background
+    preferred_dark_colors = {
+        'C0': '#4FD1FF',  # cyan
+        'C1': '#2EC4B6',  # teal
+        'gold': '#F4C542',
+        'magenta': '#FF5FA2',
+    }
+
+    col0 = preferred_dark_colors['C0'] if dark_background else 'C0'
+    col1 = preferred_dark_colors['gold'] if dark_background else 'C1'
+
     show_variable_histogram(
-        df=dfs['lLAG08'], variable='Mean (Robust)_Length',
-        label_dict=label_dict, ax=axs[0,0], color='C0')
+        df=dfs['lLAG08'], variable='Length',
+        label_dict=label_dict, ax=axs[0,0], color=col0, dark_background=dark_background, log=log)
     show_variable_histogram(
-        df=dfs['lLAG10'], variable='Mean (Robust)_Length',
-        label_dict=label_dict, ax=axs[0,1], color='C1')
+        df=dfs['lLAG10'], variable='Length',
+        label_dict=label_dict, ax=axs[0,1], color=col1, dark_background=dark_background, log=log)
     axs[0,1].sharex(axs[0,0])
 
     show_variable_histogram(
-        df=dfs['lLAG08'], variable='Mean (Robust)_Width',
-        label_dict=label_dict, ax=axs[1,0], color='C0')
+        df=dfs['lLAG08'], variable='Width',
+        label_dict=label_dict, ax=axs[1,0], color=col0, dark_background=dark_background, log=log)
     show_variable_histogram(
-        df=dfs['lLAG10'], variable='Mean (Robust)_Width',
-        label_dict=label_dict, ax=axs[1,1], color='C1')
+        df=dfs['lLAG10'], variable='Width',
+        label_dict=label_dict, ax=axs[1,1], color=col1, dark_background=dark_background, log=log)
     axs[1,1].sharex(axs[1,0])
     # Remove y labels for right column
     axs[0,1].set_ylabel('')
@@ -316,7 +356,25 @@ def show_all_variables_histograms(
 
     fig.tight_layout(pad=1, h_pad=0.5, w_pad=0.05)
     if save_figure:
-        fig.savefig(filename, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600)
+        out_filename = filename
+        try:
+            from pathlib import Path
+            if isinstance(filename, Path):
+                if dark_background:
+                    out_filename = filename.with_name(filename.stem + '_dark' + filename.suffix)
+            else:
+                # handle str paths
+                import os
+                root, ext = os.path.splitext(str(filename))
+                out_filename = root + ('_dark' if dark_background else '') + ext
+        except Exception:
+            # fallback: just use provided filename
+            out_filename = filename
+
+        if dark_background:
+            fig.savefig(out_filename, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600, facecolor=fig.get_facecolor())
+        else:
+            fig.savefig(out_filename, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600)
 
 def plot_mismatch_panel_single_gene(
     df: pd.DataFrame,
@@ -767,10 +825,10 @@ def show_volcano_and_bivariate_plots(
     axs['b_sep_disp'].set_xlim(2, 6.5)
 
     fig.tight_layout(pad=0, h_pad=0.4, w_pad=0.2)
-    fig.savefig(
-        filepaths.figures_savepath / 'figure_2/volcano_bivariate_plots.png',
-        transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
-    )
+    # fig.savefig(
+    #     filepaths.figures_savepath / 'figure_2/volcano_bivariate_plots.png',
+    #     transparent=False, bbox_inches='tight', pad_inches=0, dpi=600
+    # )
 
 #%% ####################
 # Violin and strip plots

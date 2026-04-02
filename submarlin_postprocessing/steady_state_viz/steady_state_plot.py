@@ -54,7 +54,7 @@ steady_state_viz.show_all_variables_histograms(
 ############################################################
 ## Load data with p-value
 ############################################################
-dfp_e = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['lDE20'])
+# dfp_e = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['lDE20'])
 dfp_b = pd.read_pickle(filepaths.steady_state_estimator_pvalues_pivoted_filenames['merged_all'])
 plot_metadata = clustering_viz.initialize_plot_metadata()
 df_control_stats = steady_state_viz.generate_control_stats_df(
@@ -69,6 +69,18 @@ dfp_b = steady_state_viz.compute_nlog10_fdr(dfp_b, plot_metadata)
 #%%
 plot_metadata
 # filepaths.long_labels_no_est
+
+#%%
+long_label = filepaths.long_labels
+# Show all variables histograms (2x2 grid of plots)
+steady_state_viz.show_all_variables_histograms(
+    dfs = {
+        'lLAG08': dfp_b.loc[lambda df_: ~df_['opLAG1_id'].isna(), :],
+        'lLAG10': dfp_b.loc[lambda df_: ~df_['opLAG2_id'].isna(), :],
+    },
+    label_dict=filepaths.long_labels_no_est,
+    save_figure=False
+)
 #%% Figure 2: Mismatch panel
 highlight_grnas = {
     # 'controls': [8166, 8296, 8321],
@@ -80,7 +92,7 @@ highlight_grnas = {
 steady_state_viz.plot_mismatch_panels_multiple_genes(
     dfs = {'lLAG08': dfp_b},
     label_dict=filepaths.long_labels_no_est,
-    save_figure=True,
+    save_figure=False,
     highlight_grnas=True,
 )
 
@@ -294,7 +306,7 @@ ids = {
     # 'yneF\n3225': {'col':'opLAGm_id', 'id':3225.0, 'gene': 'yneF', 'id_kymos': 3225},
     'yneF-1': {'col':'opLAGm_id', 'id':3226.0, 'gene': 'yneF', 'id_kymos': 3226},
     'yneF-2': {'col':'opLAGm_id', 'id':3227.0, 'gene': 'yneF', 'id_kymos': 3227},
-    'yumC-1': {'col':'opLAGm_id', 'id':5013.0, 'gene': 'yumC', 'id_kymos': 5013},
+    # 'yumC-1': {'col':'opLAGm_id', 'id':5013.0, 'gene': 'yumC', 'id_kymos': 5013},
     # 'yaaR': {'col':'opLAGm_id', 'id':1000058.0, 'gene': 'yaaR', 'id_kymos': 58},
 }
 # Make a pandas dataframe from ids
@@ -322,7 +334,8 @@ ax.set_ylim(2.5,4.5)
 #     pad_inches=0,
 #     bbox_inches='tight',
 # )
-
+#%%
+df_trench.loc[lambda df_: df_['opLAGm_id'].isin([1004180.0]), :]
 #%%
 ids = {
     'Controls': {'col':'Category', 'id':'control' , 'gene': 'control', 'id_kymos':8449},
@@ -343,12 +356,12 @@ steady_state_viz.violin_strip_plot(
 )
 ax.set_ylim(1.1,1.35)
 # ax.set_ylim(1.12,1.32)
-fig.savefig(
-    filepaths.figures_savepath / 'violin_plots' / 'yumC_width_violin_plot.png',
-    dpi=600,
-    pad_inches=0,
-    bbox_inches='tight',
-)
+# fig.savefig(
+#     filepaths.figures_savepath / 'violin_plots' / 'yumC_width_violin_plot.png',
+#     dpi=600,
+#     pad_inches=0,
+#     bbox_inches='tight',
+# )
 
 #%% TODO FIX GROWTH RATE
 ids = {
@@ -369,12 +382,12 @@ steady_state_viz.violin_strip_plot(
     image_zoom=0.06,
 )
 ax.set_ylim(0.4,1.7)
-fig.savefig(
-    filepaths.figures_savepath / 'violin_plots' / 'ykuS_growth_violin_plot.png',
-    dpi=600,
-    pad_inches=0,
-    bbox_inches='tight',
-)
+# fig.savefig(
+#     filepaths.figures_savepath / 'violin_plots' / 'ykuS_growth_violin_plot.png',
+#     dpi=600,
+#     pad_inches=0,
+#     bbox_inches='tight',
+# )
 #%%
 fig, ax = plt.subplots(1,1, figsize=(4.5/2,3))
 steady_state_viz.violin_strip_plot(
@@ -471,12 +484,12 @@ ax.annotate(
     color='C1',
 )
 
-fig.savefig(
-    filepaths.figures_savepath / 'flache_length_volcano_plot.png',
-    dpi=600,
-    pad_inches=0,
-    bbox_inches='tight',
-)
+# fig.savefig(
+#     filepaths.figures_savepath / 'flache_length_volcano_plot.png',
+#     dpi=600,
+#     pad_inches=0,
+#     bbox_inches='tight',
+# )
 
 #%% Make a bivariate plot of length vs growth_rate for fla-che genes
 fig, ax = plt.subplots(1,1, figsize=(1.8,1.8))
@@ -502,12 +515,12 @@ steady_state_viz.bivariate_plot_with_subsets(
 ax.set_ylim(2.4, 5.5)
 # Set yticklabels to integers
 ax.set_yticks([3,4,5])
-fig.savefig(
-    filepaths.figures_savepath / 'fla_che_length_vs_growth_rate_bivariate_plot.png',
-    dpi=600,
-    pad_inches=0,
-    bbox_inches='tight',
-)
+# fig.savefig(
+#     filepaths.figures_savepath / 'fla_che_length_vs_growth_rate_bivariate_plot.png',
+#     dpi=600,
+#     pad_inches=0,
+#     bbox_inches='tight',
+# )
 
 #%% Get subset of violin plots
 df_fla_che = (dfp_b
@@ -597,12 +610,13 @@ for i, (key, id_info) in enumerate(ids.items()):
                 fontweight='bold',
             )
 # ax.set_ylim(2.5,None)
-fig.savefig(
-    filepaths.figures_savepath / 'violin_plots' / 'subset_flache_length_violin_plot.png',
-    dpi=600,
-    pad_inches=0,
-    bbox_inches='tight',
-)
+
+# fig.savefig(
+#     filepaths.figures_savepath / 'violin_plots' / 'subset_flache_length_violin_plot.png',
+#     dpi=600,
+#     pad_inches=0,
+#     bbox_inches='tight',
+# )
 # #%%
 # fig, ax = plt.subplots(1,1, figsize=(7.2,2))
 # steady_state_viz.violin_strip_plot(
@@ -725,12 +739,12 @@ for i, (key, id_info) in enumerate(ids_main_text.items()):
                 fontweight='bold',
             )
 
-fig.savefig(
-    filepaths.figures_savepath / 'violin_plots' / 'subset_sigD_regulon_length_violin_plot_main_text.png',
-    dpi=600,
-    pad_inches=0,
-    bbox_inches='tight',
-)
+# fig.savefig(
+#     filepaths.figures_savepath / 'violin_plots' / 'subset_sigD_regulon_length_violin_plot_main_text.png',
+#     dpi=600,
+#     pad_inches=0,
+#     bbox_inches='tight',
+# )
 #%% Plot violin plot for sigD genes - For supplement
 fig, ax = plt.subplots(1,1, figsize=(7.2,2))
 steady_state_viz.violin_strip_plot(
