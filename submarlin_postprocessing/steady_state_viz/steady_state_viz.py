@@ -7,6 +7,7 @@ import numpy as np
 from adjustText import adjust_text
 import submarlin_postprocessing.filepaths as filepaths
 import seaborn as sns
+import matplotlib.collections as mcoll
 
 ##############################
 ## Functions for processing steady state DataFrames
@@ -226,6 +227,7 @@ def show_n_observations_histogram(
     color: str = None,
     dark_background: bool = False,
     log: bool = False,
+    transparent_background: bool = False,
     ) -> None:
     """
     Show a histogram of the number of observations per gene.
@@ -243,8 +245,11 @@ def show_n_observations_histogram(
     ax.set_ylabel('# Gene Targets')
     ax.set_title(title)
     if dark_background:
-        # tweak axis for dark background
-        ax.set_facecolor('#111111')
+        # tweak axis for dark background: fully black or transparent
+        if transparent_background:
+            ax.set_facecolor('none')
+        else:
+            ax.set_facecolor('#000000')
         for spine in ax.spines.values():
             spine.set_color('white')
         ax.xaxis.label.set_color('white')
@@ -261,6 +266,7 @@ def show_variable_histogram(
     color: str = None,
     dark_background: bool = False,
     log: bool = True,
+    transparent_background: bool = False,
     ) -> None:
     """
     Show a histogram of a variable.
@@ -283,7 +289,10 @@ def show_variable_histogram(
     _ = ax.hist(df_controls, bins=30, histtype='step', color=control_color, label='Controls', log=log, alpha=control_alpha)
     ax.tick_params(axis='both', which='both', pad=1)
     if dark_background:
-        ax.set_facecolor('#111111')
+        if transparent_background:
+            ax.set_facecolor('none')
+        else:
+            ax.set_facecolor('#000000')
         for spine in ax.spines.values():
             spine.set_color('white')
         ax.xaxis.label.set_color('white')
@@ -323,10 +332,16 @@ def show_all_variables_histograms(
         filename: str = filepaths.headpath / 'bmarlin_manuscript/figure_2/histograms_variables.png',
         dark_background: bool = False,
         log: bool = True,
+        transparent_background: bool = False,
 ):
     fig, axs = plt.subplots(2, 2, figsize=(2.15, 2.15), sharex=False, sharey=False)
     if dark_background:
-        fig.patch.set_facecolor('#111111')
+        if transparent_background:
+            # make figure background transparent
+            fig.patch.set_alpha(0)
+        else:
+            # fully black background
+            fig.patch.set_facecolor('#000000')
 
     # Preferred colors for dark background
     preferred_dark_colors = {
@@ -341,18 +356,18 @@ def show_all_variables_histograms(
 
     show_variable_histogram(
         df=dfs['lLAG08'], variable='Length',
-        label_dict=label_dict, ax=axs[0,0], color=col0, dark_background=dark_background, log=log)
+        label_dict=label_dict, ax=axs[0,0], color=col0, dark_background=dark_background, log=log, transparent_background=transparent_background)
     show_variable_histogram(
         df=dfs['lLAG10'], variable='Length',
-        label_dict=label_dict, ax=axs[0,1], color=col1, dark_background=dark_background, log=log)
+        label_dict=label_dict, ax=axs[0,1], color=col1, dark_background=dark_background, log=log, transparent_background=transparent_background)
     axs[0,1].sharex(axs[0,0])
 
     show_variable_histogram(
         df=dfs['lLAG08'], variable='Width',
-        label_dict=label_dict, ax=axs[1,0], color=col0, dark_background=dark_background, log=log)
+        label_dict=label_dict, ax=axs[1,0], color=col0, dark_background=dark_background, log=log, transparent_background=transparent_background)
     show_variable_histogram(
         df=dfs['lLAG10'], variable='Width',
-        label_dict=label_dict, ax=axs[1,1], color=col1, dark_background=dark_background, log=log)
+        label_dict=label_dict, ax=axs[1,1], color=col1, dark_background=dark_background, log=log, transparent_background=transparent_background)
     axs[1,1].sharex(axs[1,0])
     # Remove y labels for right column
     axs[0,1].set_ylabel('')
@@ -375,8 +390,9 @@ def show_all_variables_histograms(
         except Exception:
             # fallback: just use provided filename
             out_filename = filename
-
-        if dark_background:
+        if dark_background and transparent_background:
+            fig.savefig(out_filename, transparent=True, bbox_inches='tight', pad_inches=0, dpi=600)
+        elif dark_background:
             fig.savefig(out_filename, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600, facecolor=fig.get_facecolor())
         else:
             fig.savefig(out_filename, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600)
@@ -421,7 +437,7 @@ def plot_mismatch_panel_single_gene(
 
     # Axis styling for dark background
     if dark_background:
-        ax.set_facecolor('#111111')
+        ax.set_facecolor('#000000')
         for spine in ax.spines.values():
             spine.set_color('white')
         ax.xaxis.label.set_color('white')
@@ -437,10 +453,15 @@ def plot_mismatch_panels_multiple_genes(
     save_figure: bool = False,
     highlight_grnas: bool = False,
     dark_background: bool = False,
+    transparent_background: bool = False,
 ):
     fig, axs = plt.subplots(2, 1, figsize=(2.3/1.5, 2.3), sharex=True)
     if dark_background:
-        fig.patch.set_facecolor('#111111')
+        if transparent_background:
+            # make figure transparent so it blends into slides
+            fig.patch.set_alpha(0)
+        else:
+            fig.patch.set_facecolor('#000000')
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='rplQ',
         x_var='Instantaneous Growth Rate: Volume',
@@ -581,7 +602,9 @@ def plot_mismatch_panels_multiple_genes(
                 out_path = out_path.with_name(out_path.stem + '_dark' + out_path.suffix)
         except Exception:
             pass
-        if dark_background:
+        if dark_background and transparent_background:
+            plt.savefig(out_path, transparent=True, bbox_inches='tight', pad_inches=0, dpi=600)
+        elif dark_background:
             plt.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600, facecolor=fig.get_facecolor())
         else:
             plt.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600)
@@ -594,13 +617,18 @@ def bivariate_plot(
     label_dict,
     color='black',
     dark_background: bool = False,
+    transparent_background: bool = False,
     **kwargs
 ):
     ax.scatter(x=df[x_var], y=df[y_var], color=color, **kwargs)
     ax.set_xlabel(label_dict[x_var])
     ax.set_ylabel(label_dict[y_var])
     if dark_background:
-        ax.set_facecolor('#111111')
+        if transparent_background:
+            ax.set_facecolor('none')
+        else:
+            # fully black plotting area
+            ax.set_facecolor('#000000')
         for spine in ax.spines.values():
             spine.set_color('white')
             spine.set_edgecolor('white')
@@ -608,7 +636,23 @@ def bivariate_plot(
         ax.yaxis.label.set_color('white')
         ax.tick_params(colors='white')
         try:
-            ax.patch.set_facecolor('#111111')
+            if transparent_background:
+                ax.patch.set_facecolor('none')
+            else:
+                ax.patch.set_facecolor('#000000')
+        except Exception:
+            pass
+        # Also set the figure background to match dark/transparent mode
+        try:
+            fig = ax.get_figure()
+            if transparent_background:
+                fig.patch.set_alpha(0)
+                try:
+                    fig.patch.set_facecolor('none')
+                except Exception:
+                    pass
+            else:
+                fig.patch.set_facecolor('#000000')
         except Exception:
             pass
 
@@ -625,15 +669,16 @@ def bivariate_plot_with_subsets(
     color_subset='blue',
     color_controls='red',
     dark_background: bool = False,
+    transparent_background: bool = False,
     **kwargs
 ):
     # background points use a subtle gray in dark mode
     color_all_actual = '#555555' if dark_background else color_all
     alpha_all = 0.5 if dark_background else 0.5
-    bivariate_plot(df=df, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_all_actual, s=2, alpha=alpha_all, dark_background=dark_background, **kwargs)
+    bivariate_plot(df=df, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_all_actual, s=2, alpha=alpha_all, dark_background=dark_background, transparent_background=transparent_background, **kwargs)
     # keep subset point edges black even in dark mode
     subset_edge = 'black'
-    bivariate_plot(df=df_subset, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_subset, s=25, alpha=0.7, edgecolor=subset_edge, dark_background=dark_background, **kwargs)
+    bivariate_plot(df=df_subset, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_subset, s=25, alpha=0.7, edgecolor=subset_edge, dark_background=dark_background, transparent_background=transparent_background, **kwargs)
     texts = []
     for _, row in df_annotate.iterrows():
         txtcol = 'white' if dark_background else 'black'
@@ -664,6 +709,7 @@ def bivariate_plot_with_subsets(
         s=2,
         edgecolors='none',
         dark_background=dark_background,
+        transparent_background=transparent_background,
         **kwargs
     )
 
@@ -681,6 +727,7 @@ def show_volcano_plot(
     ax,
     color_highlight: str = 'C0',
     dark_background: bool = False,
+    transparent_background: bool = False,
 ):
     var = plot_metadata.loc[var_id,'col_name_steady_state']
     # var = ''
@@ -735,8 +782,11 @@ def show_volcano_plot(
     ax.set_xlabel(plot_metadata.loc[var_id, 'title'])
     ax.set_ylabel('$-\log_{10}(\mathrm{FDR})$')
     if dark_background:
-        # axis text and ticks
-        ax.set_facecolor('#111111')
+        # axis text and ticks; plotting area fully black or transparent
+        if transparent_background:
+            ax.set_facecolor('none')
+        else:
+            ax.set_facecolor('#000000')
         for spine in ax.spines.values():
             spine.set_color('white')
             spine.set_edgecolor('white')
@@ -745,7 +795,23 @@ def show_volcano_plot(
         ax.tick_params(colors='white')
         # ensure grid/lines are visible on dark
         try:
-            ax.patch.set_facecolor('#111111')
+            if transparent_background:
+                ax.patch.set_facecolor('none')
+            else:
+                ax.patch.set_facecolor('#000000')
+        except Exception:
+            pass
+        # Also set the figure background so single-axes figures match dark mode
+        try:
+            fig = ax.get_figure()
+            if transparent_background:
+                fig.patch.set_alpha(0)
+                try:
+                    fig.patch.set_facecolor('none')
+                except Exception:
+                    pass
+            else:
+                fig.patch.set_facecolor('#000000')
         except Exception:
             pass
     
@@ -759,6 +825,7 @@ def show_volcano_and_bivariate_plots(
     plot_metadata: pd.DataFrame,
     save_figure: bool = False,
     dark_background: bool = False,
+    transparent_background: bool = False,
     filename: str = filepaths.figures_savepath / 'figure_2/volcano_bivariate_plots.png',
 ):
     mosaic = [
@@ -772,7 +839,10 @@ def show_volcano_and_bivariate_plots(
         figsize=(5, 7.2*2/3*2/3),
     )
     if dark_background:
-        fig.patch.set_facecolor('#111111')
+        if transparent_background:
+            fig.patch.set_alpha(0)
+        else:
+            fig.patch.set_facecolor('#000000')
 
     show_volcano_plot(
         dfp = df, #p-values df
@@ -783,6 +853,7 @@ def show_volcano_and_bivariate_plots(
         ax = axs['v_length'],
         color_highlight='C0',
         dark_background=dark_background,
+        transparent_background=transparent_background,
     )
     anncol = 'C0' if not dark_background else '#4FD1FF'
     axs['v_length'].annotate(
@@ -819,6 +890,7 @@ def show_volcano_and_bivariate_plots(
         ax = axs['v_width'],
         color_highlight='C4',
         dark_background=dark_background,
+        transparent_background=transparent_background,
     )
     axs['v_width'].set_ylabel('')
     axs['v_width'].annotate(
@@ -843,6 +915,7 @@ def show_volcano_and_bivariate_plots(
         ax = axs['v_sep_disp'],
         color_highlight='C2',
         dark_background=dark_background,
+        transparent_background=transparent_background,
     )
     axs['v_sep_disp'].set_ylabel('')
     axs['v_sep_disp'].annotate(
@@ -879,6 +952,7 @@ def show_volcano_and_bivariate_plots(
         color_subset = 'C0',
         color_controls = 'black',
         dark_background=dark_background,
+        transparent_background=transparent_background,
     )
     axs['b_length'].set_ylim(None, 6.5)
 
@@ -905,6 +979,7 @@ def show_volcano_and_bivariate_plots(
         color_subset = 'C4',
         color_controls = 'black',
         dark_background=dark_background,
+        transparent_background=transparent_background,
     )
     # Set yticks to [1.15, 1.20, 1.25, 1.30]
     axs['b_width'].set_yticks([1.15, 1.20, 1.25, 1.30])
@@ -934,6 +1009,7 @@ def show_volcano_and_bivariate_plots(
         color_subset = 'C2',
         color_controls = 'black',
         dark_background=dark_background,
+        transparent_background=transparent_background,
     )
     axs['b_sep_disp'].set_xlim(2, 6.5)
 
@@ -949,7 +1025,9 @@ def show_volcano_and_bivariate_plots(
             import os
             root, ext = os.path.splitext(str(out_path))
             out_path = root + ('_dark' if dark_background else '') + ext
-        if dark_background:
+        if dark_background and transparent_background:
+            fig.savefig(out_path, transparent=True, bbox_inches='tight', pad_inches=0, dpi=600)
+        elif dark_background:
             fig.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600, facecolor=fig.get_facecolor())
         else:
             fig.savefig(out_path, transparent=False, bbox_inches='tight', pad_inches=0, dpi=600)
@@ -968,6 +1046,8 @@ def violin_strip_plot(
     image_zoom: float = 0.5,
     alpha_violin: float = 0.5,
     alpha_strip: float = 0.9,
+    dark_background: bool = False,
+    transparent_background: bool = False,
 ):
     import seaborn as sns
     df_list = []
@@ -985,19 +1065,30 @@ def violin_strip_plot(
 
     plot_order = list(ids.keys())
     if show_violins:
+        # Increase visibility on dark backgrounds: higher alpha and thicker outline
+        violin_alpha = alpha_violin if not dark_background else max(0.8, alpha_violin)
         sns.violinplot(
             data=df_plot,
             x='group',
             y=plot_metadata.loc[var_id, 'col_name_steady_state'],
             order=plot_order,
             inner=None,#'box',
-            linewidth=0.5,
-            alpha=alpha_violin,
+            linewidth=0.8,
+            alpha=violin_alpha,
             cut=0,
             # saturation=0.5,
-            color='lightgray',
+            color=('#222222' if dark_background else 'lightgray'),
             ax=ax,
     )
+        # Outline violin patches in white on dark backgrounds for contrast
+        if dark_background:
+            try:
+                for coll in ax.collections:
+                    if isinstance(coll, mcoll.PolyCollection):
+                        coll.set_edgecolor('white')
+                        coll.set_linewidth(0.6)
+            except Exception:
+                pass
 
     sns.stripplot(
         data=df_plot.loc[lambda df_: df_['Category'] != 'control', :],
@@ -1006,7 +1097,7 @@ def violin_strip_plot(
         order=plot_order,
         size=4,
         ax=ax,
-        color='gray',
+        color=('#B0B0B0' if dark_background else 'gray'),
         # edgecolor='black',
         # linewidth=0.5,
         alpha =alpha_strip,
@@ -1021,11 +1112,12 @@ def violin_strip_plot(
         median = df_group[plot_metadata.loc[var_id, 'col_name_steady_state']].median()
         q1 = df_group[plot_metadata.loc[var_id, 'col_name_steady_state']].quantile(0.25)
         q3 = df_group[plot_metadata.loc[var_id, 'col_name_steady_state']].quantile(0.75)
+        median_color = 'white' if dark_background else 'black'
         ax.hlines(
             y=median,
             xmin=i - 0.2,
             xmax=i + 0.2,
-            color='black',
+            color=median_color,
             linewidth=2,
             zorder=10,
         )
@@ -1033,7 +1125,7 @@ def violin_strip_plot(
             x=i,
             ymin=q1,
             ymax=q3,
-            color='black',
+            color=median_color,
             linewidth=1.5,
             zorder=10,
         )
@@ -1041,7 +1133,7 @@ def violin_strip_plot(
             y=[q1, q3],
             xmin=i - 0.1,
             xmax=i + 0.1,
-            color='black',
+            color=median_color,
             linewidth=1.5,
             zorder=10,
         )
@@ -1094,7 +1186,7 @@ def violin_strip_plot(
                 xycoords=trans,         # Use the blended transform defined above
                 xybox=(0, 5),           # Push image 5 points UP from the top axis line
                 boxcoords="offset points",
-                frameon=True,           # Keep True for testing, False for final
+                frameon=(False if dark_background else True),
                 pad=0,
                 box_alignment=(0.5, 0), # Align bottom-center of image to the anchor
                 annotation_clip=False   # CRITICAL: Allows drawing outside the box
@@ -1125,6 +1217,32 @@ def violin_strip_plot(
     #     edgecolor='black',
     #     linewidth=0.5,
     # )
+
+    # Axis styling for dark background (plotting area and labels)
+    if dark_background:
+        if transparent_background:
+            ax.set_facecolor('none')
+        else:
+            ax.set_facecolor('#000000')
+        for spine in ax.spines.values():
+            spine.set_color('white')
+        ax.xaxis.label.set_color('white')
+        ax.yaxis.label.set_color('white')
+        ax.tick_params(colors='white')
+        # Also set the figure background to black or transparent so saved figures
+        # don't keep the default white figure background.
+        try:
+            fig = ax.get_figure()
+            if transparent_background:
+                fig.patch.set_alpha(0)
+                try:
+                    fig.patch.set_facecolor('none')
+                except Exception:
+                    pass
+            else:
+                fig.patch.set_facecolor('#000000')
+        except Exception:
+            pass
 
 
 #### BEFORE SWITCHING FROM MULTI-INDEX TO SINGLE-INDEX COLUMNS

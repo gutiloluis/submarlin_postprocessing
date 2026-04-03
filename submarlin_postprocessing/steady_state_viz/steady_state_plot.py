@@ -9,6 +9,9 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 plt.style.use('steady_state.mplstyle')
+# Toggle for violin plot dark/transparent backgrounds
+DARK_BG = True
+TRANSPARENT_BG = True
 
 ############################################################
 ## Load data
@@ -82,6 +85,7 @@ steady_state_viz.show_all_variables_histograms(
     save_figure=True,
     dark_background=True,
     log=True,
+    transparent_background=True,
 )
 #%%
 fig, ax = plt.subplots(1,1, figsize=(3,3))
@@ -102,8 +106,10 @@ highlight_grnas = {
 steady_state_viz.plot_mismatch_panels_multiple_genes(
     dfs = {'lLAG08': dfp_b},
     label_dict=filepaths.long_labels_no_est,
-    save_figure=False,
+    save_figure=True,
     highlight_grnas=True,
+    dark_background=True,
+    transparent_background=True,
 )
 
 #%% Sampling images
@@ -122,12 +128,15 @@ dfp_b[dfp_b['Gene']=='pyk']
 dfp_b
 #%%
 filepaths.long_labels_no_est
-#%%
+#%% Volcano and bivariate plots
 plt.style.use('steady_state.mplstyle')
 steady_state_viz.show_volcano_and_bivariate_plots(
     df=dfp_b,
     df_control_stats=df_control_stats,
     plot_metadata=plot_metadata,
+    save_figure=True,
+    dark_background=True,
+    transparent_background=True,
 )
 #%% For supplement
 gene_list_to_highlight = []
@@ -336,10 +345,12 @@ steady_state_viz.violin_strip_plot(
     ax=ax,
     show_images_on_top=True,
     image_zoom=0.06,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(2.5,4.5)
 # fig.savefig(
-#     filepaths.figures_savepath / 'violin_plots' / 'unknown_length_violin_plot.png',
+#     filepaths.figures_savepath / 'violin_plots' / 'unknown_length_violin_plot_transparent.png',
 #     dpi=600,
 #     pad_inches=0,
 #     bbox_inches='tight',
@@ -363,6 +374,8 @@ steady_state_viz.violin_strip_plot(
     ax=ax,
     show_images_on_top=True,
     image_zoom=0.06,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(1.1,1.35)
 # ax.set_ylim(1.12,1.32)
@@ -390,6 +403,8 @@ steady_state_viz.violin_strip_plot(
     ax=ax,
     show_images_on_top=False,
     image_zoom=0.06,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(0.4,1.7)
 # fig.savefig(
@@ -409,6 +424,8 @@ steady_state_viz.violin_strip_plot(
     show_violins=False,
     show_images_on_top=False,
     image_zoom=0.06,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(2.5,4)
 
@@ -460,6 +477,8 @@ steady_state_viz.violin_strip_plot(
     image_zoom=0.06,
     alpha_strip=0.4,
     show_violins=False,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 # ax.set_ylim(2.5,5.5)
 ax.set_ylim(2.5,None)
@@ -480,6 +499,8 @@ steady_state_viz.show_volcano_plot(
     var_id = 'length',
     ax = ax,
     color_highlight='C1',
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_xlim(None, 5.5)
 
@@ -521,6 +542,8 @@ steady_state_viz.bivariate_plot_with_subsets(
     color_all='gray',
     color_subset = 'C1',
     color_controls='black',
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(2.4, 5.5)
 # Set yticklabels to integers
@@ -577,6 +600,8 @@ steady_state_viz.violin_strip_plot(
     image_zoom=0.06,
     alpha_strip=0.4,
     show_violins=True,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(2.3,6.5)
 # Annotate with FDR values
