@@ -82,7 +82,7 @@ steady_state_viz.show_all_variables_histograms(
         'lLAG10': dfp_b.loc[lambda df_: ~df_['opLAG2_id'].isna(), :],
     },
     label_dict=filepaths.long_labels_no_est,
-    save_figure=True,
+    save_figure=False,
     dark_background=True,
     log=True,
     transparent_background=True,
@@ -335,7 +335,8 @@ df_ids = (
 df_ids
 
 # fig, ax = plt.subplots(1,1, figsize=(4.7,3))
-fig, ax = plt.subplots(1,1, figsize=(2.9,2.2))
+# fig, ax = plt.subplots(1,1, figsize=(2.9,2.2)) # For paper
+fig, ax = plt.subplots(1,1, figsize=(3.8,2.2)) # For slides
 fig.subplots_adjust(top=0.74)
 steady_state_viz.violin_strip_plot(
     df_trench=df_trench,
@@ -349,12 +350,12 @@ steady_state_viz.violin_strip_plot(
     transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(2.5,4.5)
-# fig.savefig(
-#     filepaths.figures_savepath / 'violin_plots' / 'unknown_length_violin_plot_transparent.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+fig.savefig(
+    filepaths.figures_savepath / 'violin_plots' / 'unknown_length_violin_plot_transparent.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 #%%
 df_trench.loc[lambda df_: df_['opLAGm_id'].isin([1004180.0]), :]
 #%%
@@ -364,7 +365,8 @@ ids = {
     'yumC-2': {'col':'opLAGm_id', 'id':5021.0, 'gene': 'yumC', 'id_kymos': 5021},
     'yumC-3': {'col':'opLAGm_id', 'id':5023.0, 'gene': 'yumC', 'id_kymos': 5023},
 }
-fig, ax = plt.subplots(1,1, figsize=(1.6,2.2))
+# fig, ax = plt.subplots(1,1, figsize=(1.6,2.2)) # For paper
+fig, ax = plt.subplots(1,1, figsize=(2.2,2.2)) # For slides
 fig.subplots_adjust(top=0.74)
 steady_state_viz.violin_strip_plot(
     df_trench=df_trench,
@@ -379,12 +381,13 @@ steady_state_viz.violin_strip_plot(
 )
 ax.set_ylim(1.1,1.35)
 # ax.set_ylim(1.12,1.32)
-# fig.savefig(
-#     filepaths.figures_savepath / 'violin_plots' / 'yumC_width_violin_plot.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+
+fig.savefig(
+    filepaths.figures_savepath / 'violin_plots' / 'yumC_width_violin_plot_transparent.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 
 #%% TODO FIX GROWTH RATE
 ids = {
@@ -394,7 +397,8 @@ ids = {
     'ykuS-2': {'col':'opLAGm_id', 'id':1003902.0, 'gene': 'yumC', 'id_kymos': 3902},
 }
 
-fig, ax = plt.subplots(1,1, figsize=(0.7,2.5))
+# fig, ax = plt.subplots(1,1, figsize=(0.7,2.5)) # For paper
+fig, ax = plt.subplots(1,1, figsize=(1.5,2.5)) # For slides
 steady_state_viz.violin_strip_plot(
     df_trench=df_trench_growth,
     var_id='growth_rate',
@@ -407,12 +411,12 @@ steady_state_viz.violin_strip_plot(
     transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(0.4,1.7)
-# fig.savefig(
-#     filepaths.figures_savepath / 'violin_plots' / 'ykuS_growth_violin_plot.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+fig.savefig(
+    filepaths.figures_savepath / 'violin_plots' / 'ykuS_growth_violin_plot_transparent.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 #%%
 fig, ax = plt.subplots(1,1, figsize=(4.5/2,3))
 steady_state_viz.violin_strip_plot(
@@ -482,12 +486,12 @@ steady_state_viz.violin_strip_plot(
 )
 # ax.set_ylim(2.5,5.5)
 ax.set_ylim(2.5,None)
-# fig.savefig(
-#     filepaths.figures_savepath / 'violin_plots' / 'flache_length_violin_plot.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+fig.savefig(
+    filepaths.figures_savepath / 'violin_plots' / 'flache_length_violin_plot_all_dark.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 
 #%% 
 fig, ax = plt.subplots(1,1, figsize=(1.8,1.8))
@@ -515,12 +519,12 @@ ax.annotate(
     color='C1',
 )
 
-# fig.savefig(
-#     filepaths.figures_savepath / 'flache_length_volcano_plot.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+fig.savefig(
+    filepaths.figures_savepath / 'flache_length_volcano_plot_dark.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 
 #%% Make a bivariate plot of length vs growth_rate for fla-che genes
 fig, ax = plt.subplots(1,1, figsize=(1.8,1.8))
@@ -548,12 +552,12 @@ steady_state_viz.bivariate_plot_with_subsets(
 ax.set_ylim(2.4, 5.5)
 # Set yticklabels to integers
 ax.set_yticks([3,4,5])
-# fig.savefig(
-#     filepaths.figures_savepath / 'fla_che_length_vs_growth_rate_bivariate_plot.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+fig.savefig(
+    filepaths.figures_savepath / 'fla_che_length_vs_growth_rate_bivariate_plot_dark.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 
 #%% Get subset of violin plots
 df_fla_che = (dfp_b
@@ -646,12 +650,12 @@ for i, (key, id_info) in enumerate(ids.items()):
             )
 # ax.set_ylim(2.5,None)
 
-# fig.savefig(
-#     filepaths.figures_savepath / 'violin_plots' / 'subset_flache_length_violin_plot.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+fig.savefig(
+    filepaths.figures_savepath / 'violin_plots' / 'subset_flache_length_violin_plot_dark.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 # #%%
 # fig, ax = plt.subplots(1,1, figsize=(7.2,2))
 # steady_state_viz.violin_strip_plot(
@@ -730,6 +734,8 @@ steady_state_viz.violin_strip_plot(
     ids=ids_main_text,
     plot_metadata=plot_metadata,
     ax=ax,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(2.2,3.8)
 
@@ -745,41 +751,45 @@ for i, (key, id_info) in enumerate(ids_main_text.items()):
                 if fdr_value[0] < 0.05:
                     ax.text(
                         i,
-                        ax.get_ylim()[1]*1,
+                        ax.get_ylim()[1]*1.05,
                         f"{fdr_value[0]:.1e}",
                         ha='center',
                         va='center',
                         fontsize=7,
                         rotation=45,
+                        # Set font color to white if dark background, black otherwise
+                        color='white' if DARK_BG else 'black',
                     )
                 else:
                     ax.text(
                         i,
-                        ax.get_ylim()[1]*1,
+                        ax.get_ylim()[1]*1.05,
                         "n.s.",
                         ha='center',
                         va='center',
                         fontsize=7,
                         rotation=45,
+                        color='white' if DARK_BG else 'black',
                     )
     else:
         ax.text(
                 i,
-                ax.get_ylim()[1]*1,
+                ax.get_ylim()[1]*1.05,
                 "FDR:",
                 ha='center',
                 va='center',
                 fontsize=7,
                 rotation=0,
                 fontweight='bold',
+                color='white' if DARK_BG else 'black',
             )
 
-# fig.savefig(
-#     filepaths.figures_savepath / 'violin_plots' / 'subset_sigD_regulon_length_violin_plot_main_text.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+fig.savefig(
+    filepaths.figures_savepath / 'violin_plots' / 'subset_sigD_regulon_length_violin_plot_main_text_dark.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 #%% Plot violin plot for sigD genes - For supplement
 fig, ax = plt.subplots(1,1, figsize=(7.2,2))
 steady_state_viz.violin_strip_plot(
@@ -788,14 +798,16 @@ steady_state_viz.violin_strip_plot(
     ids=ids,
     plot_metadata=plot_metadata,
     ax=ax,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_ylim(2.2,4)
-# fig.savefig(
-#     filepaths.figures_savepath / 'violin_plots' / 'sigD_regulon_length_violin_plot.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+fig.savefig(
+    filepaths.figures_savepath / 'violin_plots' / 'sigD_regulon_length_violin_plot_dark.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 
 #%%
 fig, ax = plt.subplots(1,1, figsize=(3,3))
@@ -806,6 +818,8 @@ steady_state_viz.show_volcano_plot(
     plot_metadata = plot_metadata,
     var_id = 'length',
     ax = ax,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 ax.set_xlim(None, 5)
 
@@ -822,6 +836,8 @@ steady_state_viz.show_volcano_plot(
     plot_metadata = plot_metadata,
     var_id = 'length',
     ax = ax,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 #%%
 dfp_b_fla_other = (dfp_b
@@ -871,6 +887,8 @@ steady_state_viz.violin_strip_plot(
     ids=ids,
     plot_metadata=plot_metadata,
     ax=ax,
+    dark_background=DARK_BG,
+    transparent_background=TRANSPARENT_BG,
 )
 
 ax.set_ylim(2.1,4)
@@ -899,6 +917,7 @@ for i, (key, id_info) in enumerate(ids.items()):
                         fontsize=7,
                         rotation=45,
                         fontweight='normal',
+                        color='white' if DARK_BG else 'black',
                     )
                 else:
                     ax.text(
@@ -909,6 +928,7 @@ for i, (key, id_info) in enumerate(ids.items()):
                         va='center',
                         fontsize=7,
                         rotation=45,
+                        color='white' if DARK_BG else 'black',
                     )
     else:
         ax.text(
@@ -921,9 +941,10 @@ for i, (key, id_info) in enumerate(ids.items()):
                 rotation=0,
                 # Make bold
                 fontweight='bold',
+                color='white' if DARK_BG else 'black',
             )
 fig.savefig(
-    filepaths.figures_savepath / 'violin_plots' / 'subset_fla_other_regulatory_length_violin_plot_main_test.png',
+    filepaths.figures_savepath / 'violin_plots' / 'subset_fla_other_regulatory_length_violin_plot_main_test_dark.png',
     dpi=600,
     pad_inches=0,
     bbox_inches='tight',
@@ -1013,7 +1034,11 @@ ax.set_xlim(None,7)
 # ax.hist(df_post, alpha=0.7)
 #%%
 # Get unique indices
+
+
+
 #%% BEFORE MERGING lLAG8 and lLAG10
+# I probably want to delete this
 ############################################################
 ## Load data with p-value
 ############################################################
