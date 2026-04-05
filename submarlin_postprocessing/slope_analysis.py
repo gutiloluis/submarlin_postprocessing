@@ -609,6 +609,9 @@ def plot_mosaic_eco_bsub_comparison(
     gene_groups_e,
     gene_groups_b,
     plot_metadata,
+    save_figure=False,
+    dark_background: bool = False,
+    transparent_background: bool = False,
 ):
     # mosaic = [
     #     ['B', 'B', 'B_ribo_hist', 'B_trna_hist', 'B_init_hist', 'B_small_hist'],
@@ -626,6 +629,19 @@ def plot_mosaic_eco_bsub_comparison(
 
 
     fig, axs = plt.subplot_mosaic(mosaic, figsize=(7.2,4.5))
+    # Figure background for dark mode
+    if dark_background:
+        if transparent_background:
+            try:
+                fig.patch.set_alpha(0)
+                fig.patch.set_facecolor('none')
+            except Exception:
+                pass
+        else:
+            try:
+                fig.patch.set_facecolor('#000000')
+            except Exception:
+                pass
 
     ax = axs['B']
     plot_length_growth_scatter_bsubtilis(
@@ -813,6 +829,42 @@ def plot_mosaic_eco_bsub_comparison(
 
     fig.tight_layout(pad=0, h_pad=None, w_pad=None)
 
+    # If dark background requested, update axes and text colors to be visible
+    if dark_background:
+        try:
+            import matplotlib
+            for ax_key in axs.keys():
+                ax = axs[ax_key]
+                # set plotting area
+                if transparent_background:
+                    try:
+                        ax.set_facecolor('none')
+                    except Exception:
+                        pass
+                else:
+                    try:
+                        ax.set_facecolor('#000000')
+                    except Exception:
+                        pass
+                # spines and ticks
+                for spine in ax.spines.values():
+                    spine.set_color('white')
+                    spine.set_edgecolor('white')
+                ax.xaxis.label.set_color('white')
+                ax.yaxis.label.set_color('white')
+                ax.tick_params(colors='white')
+            # adjust text objects: change default-black text to white but keep colored titles
+            for text in fig.findobj(match=matplotlib.text.Text):
+                try:
+                    col = text.get_color()
+                    # normalize common black values
+                    if isinstance(col, str) and col in ('black', '#000000', 'k'):
+                        text.set_color('white')
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
     axs['B_ribo_slope'].set_title('Ribosome', color='C0')
     axs['B_trna_slope'].set_title('tRNA Synthetases', color='C1')
     axs['B_init_slope'].set_title('Initiation Factors', color='C3')
@@ -833,12 +885,13 @@ def plot_mosaic_eco_bsub_comparison(
                 ax.set_ylabel('Length ($\mu$m)')
             else:
                 ax.set_ylabel('')
-    fig.savefig(
-        filepaths.figures_savepath / 'ribosome_trnas_all.png',
-        dpi=600,
-        pad_inches=0,
-        bbox_inches='tight',
-    )
+    if save_figure:
+        fig.savefig(
+            filepaths.figures_savepath / 'ribosome_trnas_all_dark.png',
+            dpi=600,
+            pad_inches=0,
+            bbox_inches='tight',
+        )
     
 def make_grid_slope_plots(
     df_pvalues,
