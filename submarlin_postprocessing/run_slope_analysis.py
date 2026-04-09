@@ -126,6 +126,9 @@ slope_analysis.plot_mosaic_eco_bsub_comparison(
     gene_groups_e=gene_groups_e,
     gene_groups_b=gene_groups_b,
     plot_metadata=plot_metadata,
+    save_figure=True,
+    dark_background = True,
+    transparent_background = True,
 )
 #%% # SUL
 fig, ax = plt.subplots(1,1, figsize=(1.3,1.3))
