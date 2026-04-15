@@ -135,8 +135,20 @@ steady_state_viz.show_volcano_and_bivariate_plots(
     df_control_stats=df_control_stats,
     plot_metadata=plot_metadata,
     save_figure=True,
-    dark_background=True,
+    dark_background=False,
     transparent_background=True,
+)
+
+#%%
+#%%
+filepaths.genes_cell_wall_precursors_commited
+#%%
+(
+    dfp_b
+    .loc[dfp_b['Gene'].isin(filepaths.genes_cell_wall_precursors_commited)]
+    .loc[lambda df_: df_['Width']<1.16, :]
+    # .loc[lambda df_: df_['Instantaneous Growth Rate: Volume'] < 1.1, :]
+    ['Gene'].unique()
 )
 #%% For supplement
 gene_list_to_highlight = []

@@ -883,7 +883,7 @@ def show_volcano_and_bivariate_plots(
 
     show_volcano_plot(
         dfp = df, #p-values df
-        gene_list_to_highlight=filepaths.genes_cell_wall_precursors,
+        gene_list_to_highlight=filepaths.genes_cell_wall_precursors_commited,
         df_control_stats = df_control_stats,
         plot_metadata = plot_metadata,
         var_id = 'width',
@@ -959,11 +959,11 @@ def show_volcano_and_bivariate_plots(
     var_id = 'width'
     bivariate_plot_with_subsets(
         df = df,
-        df_subset = df.loc[lambda df_: df_['Gene'].isin(filepaths.genes_cell_wall_precursors), :],
+        df_subset = df.loc[lambda df_: df_['Gene'].isin(filepaths.genes_cell_wall_precursors_commited), :],
         df_annotate = (
             df
             .loc[lambda df_: 
-                (df_['Gene'].isin(filepaths.genes_cell_wall_precursors)) &
+                (df_['Gene'].isin(filepaths.genes_cell_wall_precursors_commited)) &
                 (df_[plot_metadata.loc[var_id, 'col_name_steady_state']] > 1.2) 
             , :]
             .sort_values(by=plot_metadata.loc[var_id, 'col_name_steady_state'], ascending=False)
