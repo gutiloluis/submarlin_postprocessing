@@ -59,9 +59,13 @@ B_SUB_YTICKS = [3,4,6]
 # )
 
 # # dfp.plot.scatter(x= 'Instantaneous Growth Rate: Volume', y = 'FDR Merged: Instantaneous Growth Rate: Volume')
-
+#%% Find init factors
+dfp = dfp_e
+dfp_init_factors = dfp.loc[lambda df_: df_['Gene'].isin(['infA','infB', 'infC']), 'Gene'].unique()
+dfp_init_factors
 #%%
-
+dfs_8.loc['infC']
+#%%
 gene_groups_e = {
     # 'ribo_stalk': ["rplJ","rplL"],
 
@@ -82,7 +86,8 @@ gene_groups_e = {
 'lysS', 'lysU', 'metG', 'pheS', 'pheT', 'proS', 'serS', \
 'thrS', 'trpS',  'tyrS', 'valS'],
 
-'init_factors': ["infA","infB"]}
+'init_factors': ["infA","infB", "infC"]}
+
 
 dfp=dfp_e
 goea = goea_e
@@ -101,7 +106,7 @@ gene_groups_b = slope_analysis.get_gene_groups(
     all_genes=all_genes,
     go_enrichment_analysis=goea,
 )
-gene_groups_b['init_factors'] = ["infA","infB"]
+gene_groups_b['init_factors'] = ["infA","infB", "infC"]
 
 go_term = 'GO:0006520'  # amino acid metabolism
 gene_groups_e['amino_acid_metabolism'] = goea_e.search_go(go_term)
@@ -126,7 +131,7 @@ slope_analysis.plot_mosaic_eco_bsub_comparison(
     gene_groups_e=gene_groups_e,
     gene_groups_b=gene_groups_b,
     plot_metadata=plot_metadata,
-    save_figure=True,
+    save_figure=False,
     dark_background = True,
     transparent_background = True,
 )
