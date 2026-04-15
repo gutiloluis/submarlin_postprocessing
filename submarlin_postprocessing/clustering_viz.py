@@ -144,7 +144,8 @@ def initialize_plot_metadata():
                 't_idiv': 7, 'sep_disp': .5, 'length': 7,
                 'width': 7, 'intensity': 7, 'growth_rate': 7
             },
-            title = {'t_idiv': "Interdivision Time (hr)", 'sep_disp': "Septum Error (%)", 
+            title = {'t_idiv': "Interdivision Time (hr)",
+                    'sep_disp': "Relative Division Error",
                     'length': "Length ($\mu$m)", 'width': "Width ($\mu$m)", 
                     'intensity': "mKate2 Mean Intensity (AU)", 'growth_rate': "Growth Rate (1/hr)"},
             short_label = {'t_idiv': r'$ \tau $', 'sep_disp': r'$ L_{S} $', 

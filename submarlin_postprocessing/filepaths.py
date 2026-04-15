@@ -426,14 +426,14 @@ short_labels = {'Mean (Robust)_Delta time (s)': r'$ \tau $',
                 'Mean (Robust)_mCherry mean_intensity': r'$ I_{rpsL} $',
                 'Mean (Robust)_Instantaneous Growth Rate: Volume': r'$ \lambda $'}
 long_labels = {'Mean (Robust)_Delta time (s)': 'Interdivision Time (s)',
-                'Mean (Robust)_Septum Displacement Length Normalized': 'Septum Error (%)',
+                'Mean (Robust)_Septum Displacement Length Normalized': 'Relative Division Error',
                 'Mean (Robust)_Length': 'Length ($\mu$m)',
                 'Mean (Robust)_Width': 'Width ($\mu$m)',
                 'Mean (Robust)_mCherry mean_intensity': 'mCherry Mean Intensity (AU)',
                 'Mean (Robust)_Instantaneous Growth Rate: Volume': 'Growth Rate (1/hr)'}
 
 long_labels_no_est = {'Delta time (s)': 'Interdivision Time (s)',
-                'Septum Displacement Length Normalized': 'Septum Error (%)',
+                'Septum Displacement Length Normalized': 'Relative Division Error',
                 'Length': 'Length ($\mu$m)',
                 'Width': 'Width ($\mu$m)',
                 'mCherry mean_intensity': 'mCherry Mean Intensity (AU)',
@@ -445,7 +445,18 @@ long_labels_no_est = {'Delta time (s)': 'Interdivision Time (s)',
 genes_divisome = ["divIB", "divIC", "ezrA", "ftsA", "ftsL", "ftsW", "ftsZ", "pbpB", "sepF", "zapA"]
 genes_replication = ['arrA', 'ccrZ', 'dnaA', 'dnaB', 'dnaC', 'dnaD', 'dnaE', 'dnaG', 'dnaI', 'dnaN', 'dnaX', 'fenA', 'hbs', 'holA', 'holB', 'ligA', 'ligB', 'polA', 'polC', 'priA', 'recD2', 'recJ', 'recQ', 'rnhB', 'rnhC', 'rtp', 'sirA', 'ssbA', 'ssbB', 'topB', 'xtmA', 'xtmB', 'yabA']
 genes_elongasome = ["mreB", "mbl", "mreBH", "mreC", "mreD", "rodZ", "rodA", "pbpA", "pbpH", "ponA", "tseB", "lytE", "sigI"]
-genes_cell_wall_precursors = ["alr", "amj", "asd", "dapA", "dapB", "dapF", "dapG", "dat", "ddl", "gcaD", "glmM", "glmR", "glmS", "ldcB", "ldt", "mraY", "murAA", "murAB", "murB", "murC", "murD", "murE", "murF", "murG", "murJ", "patA", "pgcA", "racE", "spoVB", "spoVE", "uptA", "walJ", "yabM", "yciB", "ykuQ", "ykuR", "ylmD", "yrpC"]
+genes_cell_wall_precursors = [
+    "alr", "amj", "asd", "dapA", "dapB", "dapF", "dapG", "dat", "ddl", 
+    "gcaD", "glmM", "glmR", "glmS", "ldcB", "ldt", "mraY", "murAA", "murAB",
+    "murB", "murC", "murD", "murE", "murF", "murG", "murJ", "patA", "pgcA", "racE", 
+    "spoVB", "spoVE", "uptA", "walJ", "yabM",
+    "yciB", "ykuQ", "ykuR", "ylmD", "yrpC"]
+genes_lysine_threonine = [
+    "aimB", "asd", "bcaP", "dapA", "dapB", "dapF", "dapG", "hom",
+    "lysA", "lysC", "patA", "thrB", "thrC", 
+    "thrD", "thrR", "ykuR", "yvsH", "ykuQ", "ykuS"
+]
+genes_cell_wall_precursors_commited = [gene for gene in genes_cell_wall_precursors if gene not in genes_lysine_threonine]
 genes_teichoic_acid = ["dltA", "dltB", "dltC", "dltD", "dltE", "dltX", "ggaA", "ggaB", "gtaB", "gtcA", "mnaA", "pgcA", "tagA", "tagB", "tagC", "tagD", "tagE", "tagF", "tagG", "tagH", "tagO", "yngA"]
 genes_segregation = ["codV", "gyrA", "gyrB", "hbs", "parA", "parB", "parC", "parE", "rok", "scpA", "scpB", "sftA", "smc", "spoIIIE", "topA", "topB", "whiA", "xerD"]
 genes_fla_che = ["flgB", "flgC", "fliE", "fliF", "fliG", "fliH", "fliI", "fliJ", "ylxF", "fliK", "flgD", "flgE", "swrD", "fliL", "fliM", "fliY", "cheY", "fliO", "fliP", "fliQ", "fliR", "flhB", "flhA", "flhF", "flhG", "cheB", "cheA", "cheW", "cheC", "cheD", "sigD", "swrB"]
