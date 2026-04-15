@@ -157,16 +157,26 @@ clustering_vis_obj.clustering_df = (
         df_['L3'])
     )
 )
-
 #%% Show the groups!
 
 # Assuming this is your original dictionary palette (with 19 items):
+# All groups use the same shade of gray (dark background compatible)
+
 custom_palette = {
     2: '#1f77b4', 12: '#ff7f0e', 102: '#2ca02c', 100: '#d62728', 0: '#9467bd', 
     10: '#8c564b', 9: '#e377c2', 1: '#7f7f7f', 18: '#bcbd22', 101: '#17becf', 
     11: '#4b0082', 17: '#ffa07a', 21: '#66cdaa', 13: '#f08080', 7: '#daa520', 
     25: '#800000', 5: '#008080', 4: '#b0e0e6', 24: '#ffc0cb'
 }
+
+
+gray_hex = '#b0b0b0'  # A medium-light gray that is visible on black
+custom_palette = {k: gray_hex for k in [
+    2, 12, 102, 100, 0, 10, 9, 1, 18, 101, 11, 17, 21, 13, 7, 25, 5, 4, 24
+]}
+custom_palette[2] = '#F4C542'
+custom_palette[12] = '#F4C542'
+custom_palette[11] = '#2EC4B6'
 
 # 1. Get the list of color hex codes in the order defined by the dictionary keys
 color_list = list(custom_palette.values())
@@ -178,69 +188,128 @@ ordered_keys = list(custom_palette.keys())
 #    This maps the number (e.g., 2) to its color list index (e.g., 0)
 color_index_map = {key: index for index, key in enumerate(ordered_keys)}
 color_index_map_inverted = {index: key for index, key in enumerate(ordered_keys)}
-# 4. Map your DataFrame column values to the new color indices
-data_to_color_index = clustering_vis_obj.clustering_df['Lm'].astype(int).map(color_index_map).values
 
-# 1. Access the UMAP coordinates and the cluster assignments
-x_coords = clustering_vis_obj.clustering_an_df.obsm['X_umap'][:, 0]
-y_coords = clustering_vis_obj.clustering_an_df.obsm['X_umap'][:, 1]
-cluster_labels = clustering_vis_obj.clustering_df['Lm'].astype(int)
 
-# 2. Create a temporary DataFrame for easy calculation
-temp_df = pd.DataFrame({
-    'X': x_coords,
-    'Y': y_coords,
-    'Cluster': cluster_labels
-})
+def show_groups(clustering_vis_obj, custom_palette, dark_background=False, figsize=(3, 3), annotate_centroids=True):
+    """Plot UMAP of sgRNAs colored by cluster group `Lm` with optional dark background.
 
-# 3. Calculate the centroid (mean X and Y) for each cluster
-centroids = temp_df.groupby('Cluster')[['X', 'Y']].median().reset_index()
+    Parameters
+    ----------
+    clustering_vis_obj : ClusteringVisualization
+    custom_palette : dict
+        Mapping of cluster id -> hex color.
+    dark_background : bool
+        If True, use dark figure/axes background and adapt text colors.
+    figsize : tuple
+        Figure size passed to `plt.subplots`.
+    annotate_centroids : bool
+        If True, write cluster id at the cluster median position.
+    Returns
+    -------
+    fig, ax
+    """
+    import matplotlib
+    import matplotlib.pyplot as plt
 
-fig, ax = plt.subplots(figsize=(3, 3)) # Use subplots to easily get 'ax'
+    # build the index mapping and color list (respect outer-scope definitions)
+    color_list_local = list(custom_palette.values())
+    ordered_keys_local = list(custom_palette.keys())
+    color_index_map_local = {key: index for index, key in enumerate(ordered_keys_local)}
 
-ax.scatter(
-    clustering_vis_obj.clustering_an_df.obsm['X_umap'][:, 0],
-    clustering_vis_obj.clustering_an_df.obsm['X_umap'][:, 1],
-    s=6,
-    c=data_to_color_index,
-    cmap=matplotlib.colors.ListedColormap(color_list),
-    alpha=0.7,
+    # map data -> indices for ListedColormap
+    data_to_color_index = clustering_vis_obj.clustering_df['Lm'].astype(int).map(color_index_map_local).values
+
+    # UMAP coords and cluster labels
+    x_coords = clustering_vis_obj.clustering_an_df.obsm['X_umap'][:, 0]
+    y_coords = clustering_vis_obj.clustering_an_df.obsm['X_umap'][:, 1]
+    cluster_labels = clustering_vis_obj.clustering_df['Lm'].astype(int)
+
+    temp_df = pd.DataFrame({'X': x_coords, 'Y': y_coords, 'Cluster': cluster_labels})
+    centroids = temp_df.groupby('Cluster')[['X', 'Y']].median().reset_index()
+
+    # Styling adjustments for dark mode
+    if dark_background:
+        rc = {
+            'figure.facecolor': '#000000',
+            'axes.facecolor': '#000000',
+            'axes.edgecolor': 'white',
+            'text.color': 'white',
+            'xtick.color': 'white',
+            'ytick.color': 'white',
+            'axes.labelcolor': 'white',
+        }
+        centroid_text_color = 'white'
+        scatter_alpha = 0.9
+        scatter_edgecolor = 'none'
+    else:
+        rc = {}
+        centroid_text_color = 'black'
+        scatter_alpha = 0.7
+        scatter_edgecolor = 'none'
+
+    with plt.rc_context(rc):
+        fig, ax = plt.subplots(figsize=figsize)
+
+        ax.scatter(
+            x_coords,
+            y_coords,
+            s=6,
+            c=data_to_color_index,
+            cmap=matplotlib.colors.ListedColormap(color_list_local),
+            alpha=scatter_alpha,
+            edgecolors='none',
+            linewidths=0,
+            antialiased=True,
+        )
+
+        if annotate_centroids:
+            for _, row in centroids.iterrows():
+                cluster_id = row['Cluster']
+                centroid_x = row['X']
+                centroid_y = row['Y']
+                ax.text(
+                    x=centroid_x,
+                    y=centroid_y,
+                    s=str(int(cluster_id)),
+                    fontsize=12,
+                    fontweight='bold',
+                    color=centroid_text_color,
+                    ha='center',
+                    va='center',
+                )
+
+        # Remove frame and ticks
+        # Ensure figure/axes facecolor set explicitly for environments where rc_context
+        # may not affect already-created canvases (e.g. notebook backends)
+        if dark_background:
+            fig.patch.set_facecolor(rc.get('figure.facecolor', '#000000'))
+            ax.set_facecolor(rc.get('axes.facecolor', '#000000'))
+            ax.xaxis.label.set_color(rc.get('axes.labelcolor', 'white'))
+            ax.yaxis.label.set_color(rc.get('axes.labelcolor', 'white'))
+            ax.tick_params(colors=rc.get('xtick.color', 'white'))
+
+        ax.set_frame_on(False)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        # ax.set_xlabel('UMAP 1')
+        # ax.set_ylabel('UMAP 2')
+
+        fig.tight_layout()
+        fig.savefig(
+            filepaths.figures_savepath / 'clustering/umap_dark_division_width.png',
+            dpi=600, pad_inches=0, bbox_inches='tight')
+    return fig, ax
+
+
+# call the helper and enable dark background for this section
+fig, ax = show_groups(
+    clustering_vis_obj,
+    custom_palette,
+    dark_background=True,
+    figsize=(3, 3),
+    annotate_centroids=False,
 )
-
-# 4. Iterate through the calculated centroids and add the number label
-for index, row in centroids.iterrows():
-    cluster_id = row['Cluster']
-    centroid_x = row['X']
-    centroid_y = row['Y']
-
-    ax.text(
-        x=centroid_x,
-        y=centroid_y,
-        s=str(int(cluster_id)),  # The number to display
-        fontsize=12,
-        fontweight='bold',
-        color='black',
-        ha='center',        # Horizontal alignment: Center the text on the centroid
-        va='center',        # Vertical alignment: Center the text on the centroid
-        # Add a light background box for better visibility against scattered points
-        # bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.4') 
-    )
-
-
-# Remove frame and ticks
-ax.set_frame_on(False)
-ax.set_xticks([])
-ax.set_yticks([])
-ax.set_xlabel('UMAP 1')
-ax.set_ylabel('UMAP 2')
-
-fig.tight_layout()
-# fig.savefig(
-#     filepaths.figures_savepath / 'clustering/umap_clusters_Lm.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+plt.show()
 #%% PLOT HEATMAP VERTICAL AND HORIZONTAL
 def plot_heatmap_vertical(
     df_heatmap,
@@ -320,6 +389,7 @@ def plot_heatmap_horizontal(
     vmins,
     vmaxs,
     center,
+    dark_background=False,
 ):
     cell_height = 1#0.9
     fig_height = cell_height * df_heatmap.shape[1]
@@ -333,7 +403,27 @@ def plot_heatmap_horizontal(
     data_for_heatmap = indexed_data.reshape(-1, 1)
     num_categories = len(color_list)
 
+    # apply dark background explicitly if requested (figure may be pre-created)
+    if dark_background:
+        rc = {
+            'figure.facecolor': '#000000',
+            'axes.facecolor': '#000000',
+            'text.color': 'white',
+            'xtick.color': 'white',
+            'ytick.color': 'white',
+            'axes.labelcolor': 'white',
+        }
+        fig.patch.set_facecolor(rc['figure.facecolor'])
+        for ax_ in axs:
+            ax_.set_facecolor(rc['axes.facecolor'])
+            ax_.tick_params(colors=rc['xtick.color'])
+
     ax = axs[0]
+    # annotation text color for dark mode
+    annot_kws = None
+    if dark_background:
+        annot_kws = {'color': 'white', 'weight': 'bold'}
+
     sns.heatmap(
         data=data_for_heatmap,
         cmap=matplotlib.colors.ListedColormap(color_list),
@@ -344,6 +434,7 @@ def plot_heatmap_horizontal(
         xticklabels=False,
         annot=cluster_ids.reshape(-1, 1),
         fmt='d',
+        annot_kws=annot_kws,
         linecolor='black',
         linewidth=0.5,
         ax=ax
@@ -365,12 +456,14 @@ def plot_heatmap_horizontal(
             linewidth=0.5,
             ax=ax
         )
-        ax.set_xticklabels([clustering_viz.plot_metadata.iloc[i]['short_label']], rotation=0, 
-            # fontsize=16
-        )
+        # set xtick label color for dark backgrounds
+        if dark_background:
+            ax.set_xticklabels([clustering_viz.plot_metadata.iloc[i]['short_label']], rotation=0, color='white')
+        else:
+            ax.set_xticklabels([clustering_viz.plot_metadata.iloc[i]['short_label']], rotation=0)
     
     # fig.savefig(
-    #     filepaths.figures_savepath / 'clustering/heatmap_per_cluster.png',
+    #     filepaths.figures_savepath / 'clustering/heatmap_per_cluster_dark.png',
     #     dpi=600,
     #     pad_inches=0, bbox_inches='tight'
     # )
@@ -394,6 +487,7 @@ plot_heatmap_horizontal(
     vmaxs=clustering_vis_obj.plot_metadata['vmax_plot'].values,
     center=clustering_vis_obj.plot_metadata['median_control'].values,
     clustering_viz=clustering_vis_obj,
+    dark_background=True,
 )
 
 
@@ -401,6 +495,10 @@ plot_heatmap_horizontal(
 # Heatmap of all genes (rows = genes, columns = timepoints), ordered by cluster (Lm), with very thin cells and no gene names
 
 # 1. Prepare gene-level summary: median per gene, with cluster assignment
+
+###### OPTIONAL SUBSET COL NAMES:
+# clustering_vis_obj.plot_metadata = clustering_vis_obj.plot_metadata.loc[['growth_rate', 'width', 'length']]
+
 col_names = clustering_vis_obj.plot_metadata['col_name_last_t'].values
 vmins = clustering_vis_obj.plot_metadata['vmin_plot'].values
 vmaxs = clustering_vis_obj.plot_metadata['vmax_plot'].values
@@ -413,6 +511,8 @@ gene_cluster = (
     .agg(lambda x: x.mode().iloc[0] if not x.mode().empty else np.nan)
     .astype(str)
 )
+
+
 
 # Median values per gene
 gene_medians = (
@@ -438,7 +538,24 @@ num_categories = len(color_list)
 # Plot
 cell_height = 0.012  # Make cells even thinner
 fig_height = max(cell_height * gene_heatmap_df.shape[0], 2)  # Set a minimum height for visibility
-fig, axs = plt.subplots(1, len(col_names)+1, figsize=(2.5, fig_height), gridspec_kw={'wspace': 0})
+fig, axs = plt.subplots(1, len(col_names)+1, figsize=(2.5, fig_height), gridspec_kw={'wspace': 0}) # doc
+# fig, axs = plt.subplots(1, len(col_names)+1, figsize=(2, fig_height), gridspec_kw={'wspace': 0}) # slides
+
+# optionally apply dark background to the figure and axes
+dark_background = True
+if dark_background:
+    rc = {
+        'figure.facecolor': '#000000',
+        'axes.facecolor': '#000000',
+        'text.color': 'white',
+        'xtick.color': 'white',
+        'ytick.color': 'white',
+        'axes.labelcolor': 'white',
+    }
+    fig.patch.set_facecolor(rc['figure.facecolor'])
+    for ax_ in axs:
+        ax_.set_facecolor(rc['axes.facecolor'])
+        ax_.tick_params(colors=rc['xtick.color'])
 
 # Cluster color bar
 ax = axs[0]
@@ -472,15 +589,16 @@ for i, col_name in enumerate(col_names):
         ax=ax
     )
     ax.set_yticks([])  # Remove all yticks
-    ax.set_xticklabels([clustering_vis_obj.plot_metadata.iloc[i]['short_label']], rotation=0, fontsize=10)
+    ax.set_xticklabels([clustering_vis_obj.plot_metadata.iloc[i]['short_label']], rotation=0, fontsize=10) # For paper
+    # ax.set_xticklabels([clustering_vis_obj.plot_metadata.iloc[i]['title']], rotation=45, fontsize=12) # For slides
 
 plt.tight_layout()
-# plt.savefig(
-#     filepaths.figures_savepath / 'clustering/heatmap_all_genes.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+plt.savefig(
+    filepaths.figures_savepath / 'clustering/heatmap_all_genes_dark_3_vars.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 plt.show()
 
 #%% GOANALYSIS
@@ -684,9 +802,7 @@ plt.show()
 
 ###############################
 #%% START COMMENT OUT
-################################
-
-
+#%% UMAP - HIGHLIGHT GROUPS
 
 query = "Gene.str.contains('rps') or Gene.str.contains('rpl')"
 query = "Gene.isin(" + str(filepaths.genes_replication) + ")"
@@ -711,6 +827,7 @@ def plot_umap_highlight(
     text_kwargs,
     scatter_all_kwargs={},
     scatter_highlight_kwargs={},
+    dark_background=False,
 ):
     """
     Plots UMAP points, highlighting those matching the query.
@@ -734,44 +851,88 @@ def plot_umap_highlight(
     umap = clustering_vis_obj.clustering_an_df.obsm['X_umap']
     umap_filtered = clustering_vis_obj.clustering_an_df[filtering_mask, :].obsm['X_umap']
 
-    ax.text(**text_kwargs)
+    # Styling for dark mode
+    if dark_background:
+        rc = {
+            'figure.facecolor': '#000000',
+            'axes.facecolor': '#000000',
+            'text.color': 'white',
+            'xtick.color': 'white',
+            'ytick.color': 'white',
+            'axes.labelcolor': 'white',
+        }
+        all_color = 'lightgray'
+        highlight_color = 'red'
+    else:
+        rc = {}
+        all_color = 'lightgray'
+        highlight_color = 'red'
+
+    # If dark_background is requested, explicitly set axis/figure facecolor and
+    # update default text color for the label placed on the axis. Using rc_context
+    # alone may not change an already-created figure's background in some backends
+    # (e.g. notebook inline backend), so set facecolors directly.
+    if dark_background:
+        # ensure text color is present so the label is visible
+        if 'color' not in text_kwargs:
+            text_kwargs['color'] = 'white'
+        ax.figure.patch.set_facecolor(rc.get('figure.facecolor', '#0a0a0a'))
+        ax.set_facecolor(rc.get('axes.facecolor', '#0a0a0a'))
+        ax.tick_params(colors=rc.get('xtick.color', 'white'))
+        ax.xaxis.label.set_color(rc.get('axes.labelcolor', 'white'))
+        ax.yaxis.label.set_color(rc.get('axes.labelcolor', 'white'))
+
+    # ax.text(**text_kwargs)
+    
     ax.scatter(
         umap[:, 0], umap[:, 1],
-        color='lightgray', s=3, alpha=0.5,
-        rasterized=True,
+        color=all_color, s=3, alpha=0.5,
+        edgecolors='none', linewidths=0, antialiased=True,
         **scatter_all_kwargs
     )
     ax.scatter(
         umap_filtered[:, 0], umap_filtered[:, 1],
-        color='red', s=4, alpha=1,
-        rasterized=True,
+        color=highlight_color, s=4, alpha=1,
+        edgecolors='none', linewidths=0, antialiased=True,
         **scatter_highlight_kwargs
     )
 
-fig, axs = plt.subplot_mosaic(mosaic, figsize=(2, 2), constrained_layout=True)
+# fig, axs = plt.subplot_mosaic(mosaic, figsize=(2, 2), constrained_layout=True) # For paper
+fig, axs = plt.subplot_mosaic(mosaic, figsize=(2.5, 2.5), constrained_layout=True) # For slides
 plot_umap_highlight(
     query = "Gene.isin(" + str(filepaths.genes_divisome) + ")",
     ax=axs['divisome'],
     text_kwargs={'x': 0.01, 'y': 0.1, 's': 'Divisome', 'transform': axs['divisome'].transAxes, 'ha': 'left', 'va': 'bottom'},
+    dark_background=True,
 )
 
 plot_umap_highlight(
     query = "Gene.isin(" + str(filepaths.genes_teichoic_acid) + ")",
     ax=axs['teichoic'],
     text_kwargs={'x': 0.01, 'y': 0.1, 's': 'Teichoic acid\nsynthesis', 'transform': axs['teichoic'].transAxes, 'ha': 'left', 'va': 'bottom'},
+    dark_background=True,
 )
 
-plot_umap_highlight(
-    query = "Gene.isin(" + str(filepaths.genes_replication) + ")",
-    ax=axs['replication'],
-    text_kwargs={'x': 0.01, 'y': 0.1, 's': 'DNA\nreplication', 'transform': axs['replication'].transAxes, 'ha': 'left', 'va': 'bottom'},
-)
+# plot_umap_highlight(
+#     query = "Gene.isin(" + str(filepaths.genes_replication) + ")",
+#     ax=axs['replication'],
+#     text_kwargs={'x': 0.01, 'y': 0.1, 's': 'DNA\nreplication', 'transform': axs['replication'].transAxes, 'ha': 'left', 'va': 'bottom'},
+#     dark_background=True,
+# )
 
 plot_umap_highlight(
     query = "Gene.str.contains('rps') or Gene.str.contains('rpl')",
     ax=axs['ribosome'],
     text_kwargs={'x': 0.01, 'y': 0.1, 's': 'Ribosome', 'transform': axs['ribosome'].transAxes, 'ha': 'left', 'va': 'bottom'},
-)   
+    dark_background=True,
+)
+
+plot_umap_highlight(
+    query = "Gene.isin(" + str(filepaths.genes_fla_che) + ")",
+    ax=axs['replication'],
+    text_kwargs={'x': 0.01, 'y': 0.1, 's': 'DNA\nreplication', 'transform': axs['replication'].transAxes, 'ha': 'left', 'va': 'bottom'},
+    dark_background=True,
+)
 
 # Remove frame and ticks
 for ax in axs.values():
@@ -779,21 +940,21 @@ for ax in axs.values():
     ax.set_xticks([])
     ax.set_yticks([])
 
-fig.supylabel('UMAP 2', x=-.02, ha='center', va='center')
-fig.supxlabel('UMAP 1', y=0.0, ha='center', va='center')
-# fig.savefig(
-#     filepaths.figures_savepath / 'clustering/umap_highlight_divisome_teichoic_replication_ribosome.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+# fig.supylabel('UMAP 2', x=-.02, ha='center', va='center')
+# fig.supxlabel('UMAP 1', y=0.0, ha='center', va='center')
+fig.savefig(
+    filepaths.figures_savepath / 'clustering/umap_highlight_divisome_teichoic_replication_ribosome_dark_fla_che.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 
 query = "Gene.isin(" + str(filepaths.genes_fla_che) + ")"
 query = "Gene.isin(" + str(filepaths.genes_elongasome) + ")"
 query = "Gene.isin(" + str(filepaths.genes_segregation) + ")"
 #%% With phenotype colormap
 clustering_vis_obj.plot_metadata
-#%%
+#%% UMAP - HEATMAP
 umap = clustering_vis_obj.clustering_an_df.obsm['X_umap']
 
 mosaic = [
@@ -803,26 +964,56 @@ mosaic = [
 
 fig, axs = plt.subplot_mosaic(mosaic, figsize=(4, 4), constrained_layout=True)
 
-def plot_umap_scatter(ax, key, clustering_vis_obj, umap):
+def plot_umap_scatter(ax, key, clustering_vis_obj, umap, dark_background=False):
     plot_metadata_row = clustering_vis_obj.plot_metadata.loc[key]
-    ax.scatter(
-        umap[:, 0], umap[:, 1],
-        c=clustering_vis_obj.clustering_df[plot_metadata_row['col_name_last_t']],
-        cmap='coolwarm',
-        vmin=plot_metadata_row['vmin_plot'],
-        vmax=plot_metadata_row['vmax_plot'],
-        rasterized=True,
-        s=4, alpha=0.8,
-    )
-    ax.set_title(
-        plot_metadata_row['title'].split('(')[0].strip() +
-        ' (' + plot_metadata_row['short_label'] + ')',
-        fontsize=7,
-        y=0.92
-    )
+    # Accept optional dark background using rc_context
+    def _do_plot():
+        ax.scatter(
+            umap[:, 0], umap[:, 1],
+            c=clustering_vis_obj.clustering_df[plot_metadata_row['col_name_last_t']],
+            cmap='coolwarm',
+            vmin=plot_metadata_row['vmin_plot'],
+            vmax=plot_metadata_row['vmax_plot'],
+            s=4, alpha=0.8,
+            edgecolors='none', linewidths=0, antialiased=True,
+        )
+        # ax.set_title(
+        #     plot_metadata_row['title'].split('(')[0].strip() +
+        #     ' (' + plot_metadata_row['short_label'] + ')',
+        #     fontsize=7,
+        #     y=0.92
+        # )
+
+
+    if dark_background:
+        import matplotlib.pyplot as plt
+        rc = {
+            'figure.facecolor': '#000000',
+            'axes.facecolor': '#000000',
+            'text.color': 'white',
+            'xtick.color': 'white',
+            'ytick.color': 'white',
+            'axes.labelcolor': 'white',
+        }
+        # Ensure existing figure/axis get the dark background applied explicitly
+        ax.figure.patch.set_facecolor(rc.get('figure.facecolor', '#000000'))
+        ax.set_facecolor(rc.get('axes.facecolor', '#000000'))
+        ax.tick_params(colors=rc.get('xtick.color', 'white'))
+        # Set title color when drawing
+        _orig_set_title = ax.set_title
+        def _set_title_with_color(*args, **kwargs):
+            if 'color' not in kwargs:
+                kwargs['color'] = rc.get('text.color', 'white')
+            return _orig_set_title(*args, **kwargs)
+        ax.set_title = _set_title_with_color
+        _do_plot()
+        # restore original set_title to avoid side-effects
+        ax.set_title = _orig_set_title
+    else:
+        _do_plot()
 
 for key in ['width', 'length', 'growth_rate', 'sep_disp']:
-    plot_umap_scatter(axs[key], key, clustering_vis_obj, umap)
+    plot_umap_scatter(axs[key], key, clustering_vis_obj, umap, dark_background=True)
 
 # Remove frame and ticks
 for ax in axs.values():
@@ -830,15 +1021,15 @@ for ax in axs.values():
     ax.set_xticks([])
     ax.set_yticks([])
 
-fig.supylabel('UMAP 2', x=0, ha='center', va='center', fontsize=7)
-fig.supxlabel('UMAP 1', y=0.01, ha='center', va='center', fontsize=7)
+# fig.supylabel('UMAP 2', x=0, ha='center', va='center', fontsize=7)
+# fig.supxlabel('UMAP 1', y=0.01, ha='center', va='center', fontsize=7)
 
-# fig.savefig(
-#     filepaths.figures_savepath / 'clustering/umap_scatter_phenotypes.png',
-#     dpi=600,
-#     pad_inches=0,
-#     bbox_inches='tight',
-# )
+fig.savefig(
+    filepaths.figures_savepath / 'clustering/umap_scatter_phenotypes_dark.png',
+    dpi=600,
+    pad_inches=0,
+    bbox_inches='tight',
+)
 
 #
 #%% Elongasome
@@ -1047,6 +1238,12 @@ def plot_heatmap_single_cluster_all_genes(
 plot_heatmap_single_cluster_all_genes(level='L3', cluster_number='17')
 plot_heatmap_single_cluster_all_genes(level='L3', cluster_number='24')
 plot_heatmap_single_cluster_all_genes(level='L3', cluster_number='25')
+plot_heatmap_single_cluster_all_genes(level='L3', cluster_number='12')
+plot_heatmap_single_cluster_all_genes(level='L3', cluster_number='2')
+#%%
+
+genes_division = ['divIC', 'divIB', 'divIVA', 'ftsW', 'ftsZ']
+
 #%% Heatmap of all sgRNAs
 fig, axs = plt.subplots(1, len(col_names)+1, figsize=(5,10), gridspec_kw={'wspace': 0})
 for i, col_name in enumerate(col_names):
