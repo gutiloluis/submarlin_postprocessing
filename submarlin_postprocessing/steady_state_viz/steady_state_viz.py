@@ -8,6 +8,7 @@ from adjustText import adjust_text
 import submarlin_postprocessing.filepaths as filepaths
 import seaborn as sns
 import matplotlib.collections as mcoll
+from matplotlib.ticker import ScalarFormatter
 
 ##############################
 ## Functions for processing steady state DataFrames
@@ -267,6 +268,7 @@ def show_variable_histogram(
     dark_background: bool = False,
     log: bool = True,
     transparent_background: bool = False,
+    show_controls_overlay: bool = True,
     ) -> None:
     """
     Show a histogram of a variable.
@@ -279,14 +281,15 @@ def show_variable_histogram(
     ax.set_ylabel('# sgRNAs', labelpad=0)
     if title is not None:
         ax.set_title(title)
-    df_controls = df.loc[df['Category'] == 'control', variable]
-    if dark_background:
-        control_color = '#B0B0B0'
-        control_alpha = 0.55
-    else:
-        control_color = 'black'
-        control_alpha = 0.4
-    _ = ax.hist(df_controls, bins=30, histtype='step', color=control_color, label='Controls', log=log, alpha=control_alpha)
+    if show_controls_overlay:
+        df_controls = df.loc[df['Category'] == 'control', variable]
+        if dark_background:
+            control_color = '#B0B0B0'
+            control_alpha = 0.55
+        else:
+            control_color = 'black'
+            control_alpha = 0.4
+        _ = ax.hist(df_controls, bins=30, histtype='step', color=control_color, label='Controls', log=log, alpha=control_alpha)
     ax.tick_params(axis='both', which='both', pad=1)
     if dark_background:
         if transparent_background:
@@ -300,6 +303,21 @@ def show_variable_histogram(
         if title is not None:
             ax.title.set_color('white')
         ax.tick_params(colors='white')
+    # Remove axis offset / scientific-notation exponent (e.g., the '10^(-1)' label)
+    try:
+        fmt = ScalarFormatter(useMathText=True)
+        fmt.set_scientific(False)
+        fmt.set_useOffset(False)
+        ax.yaxis.set_major_formatter(fmt)
+        off = ax.yaxis.get_offset_text()
+        if off is not None:
+            off.set_visible(False)
+    except Exception:
+        try:
+            ax.yaxis.get_major_formatter().set_useOffset(False)
+            ax.yaxis.get_offset_text().set_visible(False)
+        except Exception:
+            pass
     
 def show_all_histograms(
     dfs: dict[str, pd.DataFrame],
@@ -333,6 +351,7 @@ def show_all_variables_histograms(
         dark_background: bool = False,
         log: bool = True,
         transparent_background: bool = False,
+    layer: str | None = None, # options: None (default full), 'controls', 'full'
 ):
     fig, axs = plt.subplots(2, 2, figsize=(2.15, 2.15), sharex=False, sharey=False)
     if dark_background:
@@ -354,21 +373,91 @@ def show_all_variables_histograms(
     col0 = preferred_dark_colors['C0'] if dark_background else 'C0'
     col1 = preferred_dark_colors['gold'] if dark_background else 'C1'
 
-    show_variable_histogram(
-        df=dfs['lLAG08'], variable='Length',
-        label_dict=label_dict, ax=axs[0,0], color=col0, dark_background=dark_background, log=log, transparent_background=transparent_background)
-    show_variable_histogram(
-        df=dfs['lLAG10'], variable='Length',
-        label_dict=label_dict, ax=axs[0,1], color=col1, dark_background=dark_background, log=log, transparent_background=transparent_background)
+    # control color used when plotting controls-only layer
+    control_color = '#B0B0B0' if dark_background else 'black'
+
+    # Layered plotting support (only enabled for dark background)
+    # layer: None or 'full' -> draw full figure (default behavior)
+    # layer: 'controls' -> draw only the controls distribution for each subplot
+    if layer is not None and layer not in ('controls', 'full'):
+        raise ValueError("layer must be one of None, 'controls', or 'full'")
+
+    # If layering requested but not in dark mode, ignore layering and draw full (backwards compatible)
+    if layer is not None and not dark_background:
+        layer = None
+
+    # Prepare consistent axis limits based on the full (combined) distributions
+    bins = 30
+    def _compute_limits(var_name):
+        a0 = dfs['lLAG08'][var_name].dropna().values
+        a1 = dfs['lLAG10'][var_name].dropna().values
+        if len(a0) == 0 and len(a1) == 0:
+            return (0, 1, 0, 1)
+        combined = np.concatenate([a0, a1])
+        xmin, xmax = np.nanmin(combined), np.nanmax(combined)
+        # compute histogram counts to determine ymax
+        counts, edges = np.histogram(combined, bins=bins)
+        ymax = counts.max() if len(counts) > 0 else 1
+        return (xmin, xmax, 0 if not log else max(0.1, counts.min() if counts.min() > 0 else 0.1), ymax)
+
+    # Length limits
+    lxmin, lxmax, llymin, llymax = _compute_limits('Length')
+    # Width limits
+    wxmin, wxmax, wlymin, wlymax = _compute_limits('Width')
+
+    if layer == 'controls':
+        # plot only control distributions by passing filtered dfs and disabling overlay
+        show_variable_histogram(
+            df=dfs['lLAG08'].loc[lambda df_: df_['Category'] == 'control', :], variable='Length',
+            label_dict=label_dict, ax=axs[0,0], color=control_color, dark_background=dark_background, log=log, transparent_background=transparent_background, show_controls_overlay=False)
+        show_variable_histogram(
+            df=dfs['lLAG10'].loc[lambda df_: df_['Category'] == 'control', :], variable='Length',
+            label_dict=label_dict, ax=axs[0,1], color=control_color, dark_background=dark_background, log=log, transparent_background=transparent_background, show_controls_overlay=False)
+    else:
+        show_variable_histogram(
+            df=dfs['lLAG08'], variable='Length',
+            label_dict=label_dict, ax=axs[0,0], color=col0, dark_background=dark_background, log=log, transparent_background=transparent_background)
+        show_variable_histogram(
+            df=dfs['lLAG10'], variable='Length',
+            label_dict=label_dict, ax=axs[0,1], color=col1, dark_background=dark_background, log=log, transparent_background=transparent_background)
     axs[0,1].sharex(axs[0,0])
 
-    show_variable_histogram(
-        df=dfs['lLAG08'], variable='Width',
-        label_dict=label_dict, ax=axs[1,0], color=col0, dark_background=dark_background, log=log, transparent_background=transparent_background)
-    show_variable_histogram(
-        df=dfs['lLAG10'], variable='Width',
-        label_dict=label_dict, ax=axs[1,1], color=col1, dark_background=dark_background, log=log, transparent_background=transparent_background)
+    if layer == 'controls':
+        show_variable_histogram(
+            df=dfs['lLAG08'].loc[lambda df_: df_['Category'] == 'control', :], variable='Width',
+            label_dict=label_dict, ax=axs[1,0], color=control_color, dark_background=dark_background, log=log, transparent_background=transparent_background, show_controls_overlay=False)
+        show_variable_histogram(
+            df=dfs['lLAG10'].loc[lambda df_: df_['Category'] == 'control', :], variable='Width',
+            label_dict=label_dict, ax=axs[1,1], color=control_color, dark_background=dark_background, log=log, transparent_background=transparent_background, show_controls_overlay=False)
+    else:
+        show_variable_histogram(
+            df=dfs['lLAG08'], variable='Width',
+            label_dict=label_dict, ax=axs[1,0], color=col0, dark_background=dark_background, log=log, transparent_background=transparent_background)
+        show_variable_histogram(
+            df=dfs['lLAG10'], variable='Width',
+            label_dict=label_dict, ax=axs[1,1], color=col1, dark_background=dark_background, log=log, transparent_background=transparent_background)
     axs[1,1].sharex(axs[1,0])
+    # enforce consistent axes limits so controls-only and full maintain same ranges
+    try:
+        axs[0,0].set_xlim(lxmin, lxmax)
+        axs[0,1].set_xlim(lxmin, lxmax)
+        if log:
+            axs[0,0].set_ylim(llymin, llymax * 1.1)
+            axs[0,1].set_ylim(llymin, llymax * 1.1)
+        else:
+            axs[0,0].set_ylim(0, llymax * 1.1)
+            axs[0,1].set_ylim(0, llymax * 1.1)
+
+        axs[1,0].set_xlim(wxmin, wxmax)
+        axs[1,1].set_xlim(wxmin, wxmax)
+        if log:
+            axs[1,0].set_ylim(wlymin, wlymax * 1.1)
+            axs[1,1].set_ylim(wlymin, wlymax * 1.1)
+        else:
+            axs[1,0].set_ylim(0, wlymax * 1.1)
+            axs[1,1].set_ylim(0, wlymax * 1.1)
+    except Exception:
+        pass
     # Remove y labels for right column
     axs[0,1].set_ylabel('')
     axs[1,1].set_ylabel('')
@@ -406,15 +495,17 @@ def plot_mismatch_panel_single_gene(
     ax: plt.Axes,
     color: str = None,
     dark_background: bool = False,
+    plot_gene_points: bool = True,
 ) -> None:
     df_gene = df.loc[df['Gene'] == gene, [x_var, y_var]]
     
-    ax.scatter(
-        df_gene[x_var],
-        df_gene[y_var],
-        color=color,
-        alpha = 0.7,
-    )
+    if plot_gene_points:
+        ax.scatter(
+            df_gene[x_var],
+            df_gene[y_var],
+            color=color,
+            alpha = 0.7,
+        )
     df_controls = df.loc[df['Category'] == 'control', [x_var, y_var]]
     if dark_background:
         ctrl_color = '#B0B0B0'
@@ -454,6 +545,8 @@ def plot_mismatch_panels_multiple_genes(
     highlight_grnas: bool = False,
     dark_background: bool = False,
     transparent_background: bool = False,
+    layer: str | None = None, # options: None/'full'/'controls'/'ones'/'twos'/'threes'
+    filename: str = filepaths.headpath / 'bmarlin_manuscript/figure_2/mismatch_panels_annotated.png',
 ):
     fig, axs = plt.subplots(2, 1, figsize=(2.3/1.5, 2.3), sharex=True)
     if dark_background:
@@ -462,12 +555,15 @@ def plot_mismatch_panels_multiple_genes(
             fig.patch.set_alpha(0)
         else:
             fig.patch.set_facecolor('#000000')
+    # Determine if we should draw the full gene point clouds or only controls/annotations
+    draw_full_points = True if (layer is None or layer == 'full') else False
+
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='rplQ',
         x_var='Instantaneous Growth Rate: Volume',
         y_var='Length',
         label_dict=label_dict,
-        ax=axs[0], color='C0', dark_background=dark_background
+        ax=axs[0], color='C0', dark_background=dark_background, plot_gene_points=draw_full_points
     )
 
     plot_mismatch_panel_single_gene(
@@ -475,22 +571,35 @@ def plot_mismatch_panels_multiple_genes(
         x_var='Instantaneous Growth Rate: Volume',
         y_var='Length',
         label_dict=label_dict,
-        ax=axs[0], color='C1', dark_background=dark_background
+        ax=axs[0], color='C1', dark_background=dark_background, plot_gene_points=draw_full_points
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='pyk',
         x_var='Instantaneous Growth Rate: Volume',
         y_var='Length',
         label_dict=label_dict,
-        ax=axs[0], color='C2', dark_background=dark_background
+        ax=axs[0], color='C2', dark_background=dark_background, plot_gene_points=draw_full_points
     )
     plot_mismatch_panel_single_gene(
         df=dfs['lLAG08'], gene='murB',
         x_var='Instantaneous Growth Rate: Volume',
         y_var='Width',
         label_dict=label_dict,
-        ax=axs[1], color='C4', dark_background=dark_background
+        ax=axs[1], color='C4', dark_background=dark_background, plot_gene_points=draw_full_points
     )    
+
+    # Determine annotation level numeric threshold from layer
+    layer_map = {
+        None: None,
+        'full': None,
+        'controls': 0,
+        'ones': 1,
+        'twos': 2,
+        'threes': 3,
+    }
+    if layer not in layer_map:
+        raise ValueError("layer must be one of None, 'full', 'controls', 'ones', 'twos', 'threes'")
+    annotate_up_to = layer_map[layer]
 
     if highlight_grnas is not None:
         grnas_to_highlight ={
@@ -502,6 +611,19 @@ def plot_mismatch_panels_multiple_genes(
         color_map = {'rplQ': 'C0', 'ftsW': 'C1', 'murB': 'C4'}
         for gene, grna_ids in grnas_to_highlight.items():
             for idx, grna_id in enumerate(grna_ids):
+                # Decide whether to plot this highlighted point based on layer
+                # annotate_up_to == 0 means controls only (no points). If None, full (plot all)
+                plot_this = False
+                if annotate_up_to is None:
+                    plot_this = True
+                else:
+                    # annotate_up_to is integer: plot indices < annotate_up_to
+                    # e.g., ones->1 plots idx==0; twos->2 plots idx in [0,1]
+                    if idx < annotate_up_to and annotate_up_to > 0:
+                        plot_this = True
+                if not plot_this:
+                    continue
+
                 df_grna = dfs['lLAG08'].loc[
                     (dfs['lLAG08']['Gene'] == gene) &
                     (dfs['lLAG08']['opLAG1_id'] == grna_id),
@@ -518,34 +640,27 @@ def plot_mismatch_panels_multiple_genes(
                         facecolor=color,
                         # linewidth=1.5,
                     )
+                    # annotate with the index number (1-based)
+                    anncol = 'black' if not dark_background else 'white'
+                    # determine text offset depending on gene and index
                     if gene == 'rplQ':
-                        anncol = 'black' if not dark_background else 'white'
-                        axs[0].annotate(
-                            str(idx + 1),
-                            (df_grna['Instantaneous Growth Rate: Volume'].values[0], df_grna['Length'].values[0]),
-                            color=anncol,
-                            fontsize=7,
-                            ha='right',
-                            va='center',
-                            fontweight='bold',
-                            bbox=dict(facecolor='none', edgecolor='none', pad=0.5, alpha=0.7),
-                            xytext=(-3, 0),  # Move left by 8 points, vertically centered
-                            textcoords='offset points'
-                        )
+                        ha='right'; xytext=(-3,0)
                     elif gene == 'ftsW':
-                        anncol = 'black' if not dark_background else 'white'
-                        axs[0].annotate(
-                            str(idx + 1),
-                            (df_grna['Instantaneous Growth Rate: Volume'].values[0], df_grna['Length'].values[0]),
-                            color=anncol,
-                            fontsize=7,
-                            ha='left',  # Change to 'left' to show on the right of the point
-                            va='center',
-                            fontweight='bold',
-                            bbox=dict(facecolor='none', edgecolor='none', pad=0.5, alpha=0.7),
-                            xytext=(3, 0),  # Change x offset to positive to move right
-                            textcoords='offset points'
-                        )
+                        ha='left'; xytext=(3,0)
+                    else:
+                        ha='center'; xytext=(0,0)
+                    axs[0].annotate(
+                        str(idx + 1),
+                        (df_grna['Instantaneous Growth Rate: Volume'].values[0], df_grna['Length'].values[0]),
+                        color=anncol,
+                        fontsize=7,
+                        ha=ha,
+                        va='center',
+                        fontweight='bold',
+                        bbox=dict(facecolor='none', edgecolor='none', pad=0.5, alpha=0.7),
+                        xytext=xytext,
+                        textcoords='offset points'
+                    )
                 if gene == 'murB':
                     edgecol = 'black'
                     axs[1].scatter(
@@ -594,14 +709,20 @@ def plot_mismatch_panels_multiple_genes(
     fig.align_ylabels([axs[0], axs[1]])
     fig.tight_layout(pad=1, h_pad=0.5, w_pad=0.05)
     if save_figure:
-        # append '_dark' suffix when saving dark-background version
-        out_path = filepaths.headpath / 'bmarlin_manuscript/figure_2/mismatch_panels_annotated.png'
+        # allow caller to provide filename; append '_dark' suffix when saving dark-background version
+        out_path = filename
         try:
             from pathlib import Path
             if dark_background and isinstance(out_path, Path):
                 out_path = out_path.with_name(out_path.stem + '_dark' + out_path.suffix)
         except Exception:
-            pass
+            # fallback to string handling
+            try:
+                import os
+                root, ext = os.path.splitext(str(out_path))
+                out_path = root + ('_dark' if dark_background else '') + ext
+            except Exception:
+                pass
         if dark_background and transparent_background:
             plt.savefig(out_path, transparent=True, bbox_inches='tight', pad_inches=0, dpi=600)
         elif dark_background:
@@ -672,46 +793,78 @@ def bivariate_plot_with_subsets(
     transparent_background: bool = False,
     **kwargs
 ):
+    # Interpret layer parameter (None / 'full' / 'controls' / 'all' / 'highlighted' / 'annotate')
+    layer = kwargs.pop('layer', None)
+    if layer not in (None, 'full', 'controls', 'all', 'highlighted', 'annotate'):
+        raise ValueError("layer must be one of None, 'full','controls','all','highlighted','annotate'")
+
+    draw_controls = layer in (None, 'full', 'controls', 'all', 'highlighted', 'annotate')
+    draw_base = layer in (None, 'full', 'all', 'highlighted', 'annotate')
+    draw_subset = layer in (None, 'full', 'highlighted', 'annotate')
+    draw_annotations = layer in ('annotate',)
+
+    # Compute and fix axis limits based on the full dataset so layering doesn't autoscale
+    try:
+        xvals = df[x_var].dropna().values
+        yvals = df[y_var].dropna().values
+        if xvals.size > 0 and yvals.size > 0:
+            xmin, xmax = float(np.nanmin(xvals)), float(np.nanmax(xvals))
+            ymin, ymax = float(np.nanmin(yvals)), float(np.nanmax(yvals))
+            xpad = max(1e-6, (xmax - xmin) * 0.05)
+            ypad = max(1e-6, (ymax - ymin) * 0.05)
+            ax.set_xlim(xmin - xpad, xmax + xpad)
+            ax.set_ylim(ymin - ypad, ymax + ypad)
+    except Exception:
+        pass
+
     # background points use a subtle gray in dark mode
-    color_all_actual = '#555555' if dark_background else color_all
-    alpha_all = 0.5 if dark_background else 0.5
-    bivariate_plot(df=df, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_all_actual, s=2, alpha=alpha_all, dark_background=dark_background, transparent_background=transparent_background, **kwargs)
+    if draw_base:
+        color_all_actual = '#555555' if dark_background else color_all
+        alpha_all = 0.5 if dark_background else 0.5
+        bivariate_plot(df=df, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_all_actual, s=2, alpha=alpha_all, dark_background=dark_background, transparent_background=transparent_background, **kwargs)
+
     # keep subset point edges black even in dark mode
-    subset_edge = 'black'
-    bivariate_plot(df=df_subset, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_subset, s=25, alpha=0.7, edgecolor=subset_edge, dark_background=dark_background, transparent_background=transparent_background, **kwargs)
-    texts = []
-    for _, row in df_annotate.iterrows():
-        txtcol = 'white' if dark_background else 'black'
-        texts.append(
-            ax.text(x=row[x_var], y=row[y_var], s=row['Gene'],
-                ha='center', va='bottom', fontsize=8, color=txtcol)
+    if draw_subset:
+        subset_edge = 'black'
+        bivariate_plot(df=df_subset, x_var=x_var, y_var=y_var, ax=ax, label_dict=label_dict, color=color_subset, s=25, alpha=0.7, edgecolor=subset_edge, dark_background=dark_background, transparent_background=transparent_background, **kwargs)
+
+    # annotations
+    if draw_annotations:
+        texts = []
+        for _, row in df_annotate.iterrows():
+            txtcol = 'white' if dark_background else 'black'
+            texts.append(
+                ax.text(x=row[x_var], y=row[y_var], s=row['Gene'],
+                    ha='center', va='bottom', fontsize=8, color=txtcol)
+            )
+        _= adjust_text(
+            texts,
+            arrowprops=dict(arrowstyle='->', color=('white' if dark_background else 'black'), lw=1.5),
+            ax=ax,
+            # force_points=0.01,
+            # force_text=0.01,
+            # force_pull=0.001,
+            min_arrow_len=1,
         )
-    _= adjust_text(
-        texts,
-        arrowprops=dict(arrowstyle='->', color=('white' if dark_background else 'black'), lw=1.5),
-        ax=ax,
-        # force_points=0.01,
-        # force_text=0.01,
-        # force_pull=0.001,
-        min_arrow_len=1,
-    )
+
     # controls: subtle gray in dark mode, with slightly higher alpha; remove edge for controls
-    control_color_actual = '#B0B0B0' if dark_background else color_controls
-    control_alpha = 0.55 if dark_background else 0.5
-    bivariate_plot(
-        df=df_controls,
-        x_var=x_var,
-        y_var=y_var,
-        ax=ax,
-        label_dict=label_dict,
-        color=control_color_actual,
-        alpha=control_alpha,
-        s=2,
-        edgecolors='none',
-        dark_background=dark_background,
-        transparent_background=transparent_background,
-        **kwargs
-    )
+    if draw_controls:
+        control_color_actual = '#B0B0B0' if dark_background else color_controls
+        control_alpha = 0.55 if dark_background else 0.5
+        bivariate_plot(
+            df=df_controls,
+            x_var=x_var,
+            y_var=y_var,
+            ax=ax,
+            label_dict=label_dict,
+            color=control_color_actual,
+            alpha=control_alpha,
+            s=2,
+            edgecolors='none',
+            dark_background=dark_background,
+            transparent_background=transparent_background,
+            **kwargs
+        )
 
 
 
@@ -728,21 +881,52 @@ def show_volcano_plot(
     color_highlight: str = 'C0',
     dark_background: bool = False,
     transparent_background: bool = False,
+    layer: str | None = None, # None/'full'/'controls'/'all'/'highlighted'/'annotate'
 ):
     var = plot_metadata.loc[var_id,'col_name_steady_state']
     # var = ''
+    # Interpret layer
+    # layers: 'controls' -> controls only
+    # 'all' -> all genes (base)
+    # 'highlighted' -> base + highlighted
+    # 'annotate' -> previous + annotations labels
+    # None or 'full' -> behave as before (all + highlighted)
+    if layer not in (None, 'full', 'controls', 'all', 'highlighted', 'annotate'):
+        raise ValueError("layer must be one of None, 'full','controls','all','highlighted','annotate'")
+
+    draw_controls = layer in (None, 'full', 'controls', 'all', 'highlighted', 'annotate')
+    draw_base = layer in (None, 'full', 'all', 'highlighted', 'annotate')
+    draw_highlight = layer in (None, 'full', 'highlighted', 'annotate')
+    draw_annotations = layer in ('annotate',)
+
+    # Compute and fix axis limits based on the full dataset so layering doesn't autoscale
+    try:
+        xvals = dfp[var].dropna().values
+        yvals = dfp['nlog10_fdr: ' + var].dropna().values
+        if xvals.size > 0 and yvals.size > 0:
+            xmin, xmax = float(np.nanmin(xvals)), float(np.nanmax(xvals))
+            ymin, ymax = float(np.nanmin(yvals)), float(np.nanmax(yvals))
+            # add small margin
+            xpad = max(1e-6, (xmax - xmin) * 0.05)
+            ypad = max(1e-6, (ymax - ymin) * 0.05)
+            ax.set_xlim(xmin - xpad, xmax + xpad)
+            ax.set_ylim(max(0, ymin - ypad), ymax + ypad)
+    except Exception:
+        pass
+
     # background (non-highlight, non-control) points
-    base_color = '#555555' if dark_background else 'gray'
-    base_alpha = 0.5 if dark_background else 0.4
-    ax.scatter(
-        x=dfp[var],
-        y=dfp['nlog10_fdr: ' + var],
-        s=5,
-        color=base_color,
-        alpha=base_alpha,
-    )
-    
-    if len(gene_list_to_highlight) > 0:
+    if draw_base:
+        base_color = '#555555' if dark_background else 'gray'
+        base_alpha = 0.5 if dark_background else 0.4
+        ax.scatter(
+            x=dfp[var],
+            y=dfp['nlog10_fdr: ' + var],
+            s=5,
+            color=base_color,
+            alpha=base_alpha,
+        )
+
+    if draw_highlight and len(gene_list_to_highlight) > 0:
         # keep colored highlight edges black on both light and dark backgrounds
         edgecol = 'black'
         ax.scatter(
@@ -756,19 +940,30 @@ def show_volcano_plot(
         )
 
     # controls: use subtle gray in dark mode
-    if dark_background:
-        ctrl_scatter_color = '#B0B0B0'
-        ctrl_alpha = 0.55
-    else:
-        ctrl_scatter_color = 'black'
-        ctrl_alpha = 0.4
-    ax.scatter(
-        x = dfp.loc[lambda df_: df_['Category'] == 'control', var],
-        y = dfp.loc[lambda df_: df_['Category'] == 'control', 'nlog10_fdr: ' + var],
-        s=5,
-        color=ctrl_scatter_color,
-        alpha=ctrl_alpha,
-    )
+    if draw_controls:
+        if dark_background:
+            ctrl_scatter_color = '#B0B0B0'
+            ctrl_alpha = 0.55
+        else:
+            ctrl_scatter_color = 'black'
+            ctrl_alpha = 0.4
+        ax.scatter(
+            x = dfp.loc[lambda df_: df_['Category'] == 'control', var],
+            y = dfp.loc[lambda df_: df_['Category'] == 'control', 'nlog10_fdr: ' + var],
+            s=5,
+            color=ctrl_scatter_color,
+            alpha=ctrl_alpha,
+        )
+
+    # If annotations requested, add text labels for highlighted genes
+    if draw_annotations and len(gene_list_to_highlight) > 0:
+        txtcol = 'white' if dark_background else 'black'
+        for gene in gene_list_to_highlight:
+            sub = dfp.loc[lambda df_: df_['Gene'] == gene, :]
+            if sub.shape[0] > 0:
+                x = sub[var].values[0]
+                y = sub['nlog10_fdr: ' + var].values[0]
+                ax.text(x, y, gene, color=txtcol, fontsize=7)
     
 
     # Draw vertical line at plus minus 3 stds
@@ -827,6 +1022,7 @@ def show_volcano_and_bivariate_plots(
     dark_background: bool = False,
     transparent_background: bool = False,
     filename: str = filepaths.figures_savepath / 'figure_2/volcano_bivariate_plots.png',
+    layer: str | None = None, # None/'full'/'controls'/'all'/'highlighted'/'annotate'
 ):
     mosaic = [
         ['v_length', 'v_sep_disp', 'v_width'],
@@ -854,19 +1050,24 @@ def show_volcano_and_bivariate_plots(
         color_highlight='C0',
         dark_background=dark_background,
         transparent_background=transparent_background,
+        layer=layer,
     )
-    anncol = 'C0' if not dark_background else '#4FD1FF'
-    axs['v_length'].annotate(
-        'Divisome',
-        # Do it a little below the top right
-        xy=(0.95, 0.85),
-        xycoords='axes fraction',
-        ha='right',
-        va='top',
-        fontsize=7,
-        # Set font color to 'C0'
-        color=anncol,
-    )
+    # Only show the section title annotations when the layer is at-or-after the
+    # 'highlighted' stage. This removes these labels for earlier layers
+    # (e.g., 'controls' and 'all') so they don't appear before highlights.
+    if layer in (None, 'full', 'highlighted', 'annotate'):
+        anncol = 'C0' if not dark_background else '#4FD1FF'
+        axs['v_length'].annotate(
+            'Divisome',
+            # Do it a little below the top right
+            xy=(0.95, 0.85),
+            xycoords='axes fraction',
+            ha='right',
+            va='top',
+            fontsize=7,
+            # Set font color to 'C0'
+            color=anncol,
+        )
 
     txtcol = 'black' if not dark_background else 'white'
     axs['v_length'].annotate(
@@ -891,19 +1092,21 @@ def show_volcano_and_bivariate_plots(
         color_highlight='C4',
         dark_background=dark_background,
         transparent_background=transparent_background,
+        layer=layer,
     )
     axs['v_width'].set_ylabel('')
-    axs['v_width'].annotate(
-        'Cell Wall\nPrecursors',
-        # Do it a little below the top right
-        xy=(1, 0.85),
-        xycoords='axes fraction',
-        ha='right',
-        va='top',
-        fontsize=7,
-        # Set font color to 'C4'
-        color=('C4' if not dark_background else 'C4'),
-    )
+    if layer in (None, 'full', 'highlighted', 'annotate'):
+        axs['v_width'].annotate(
+            'Cell Wall\nPrecursors',
+            # Do it a little below the top right
+            xy=(1, 0.85),
+            xycoords='axes fraction',
+            ha='right',
+            va='top',
+            fontsize=7,
+            # Set font color to 'C4'
+            color=('C4' if not dark_background else 'C4'),
+        )
 
 
     show_volcano_plot(
@@ -916,19 +1119,21 @@ def show_volcano_and_bivariate_plots(
         color_highlight='C2',
         dark_background=dark_background,
         transparent_background=transparent_background,
+        layer=layer,
     )
     axs['v_sep_disp'].set_ylabel('')
-    axs['v_sep_disp'].annotate(
-        'Chromosome\nSegregation',
-        # Do it a little below the top right
-        xy=(1, 0.85),
-        xycoords='axes fraction',
-        ha='right',
-        va='top',
-        fontsize=7,
-        # Set font color to 'C2'
-        color=('C2' if not dark_background else 'C2'),
-    )
+    if layer in (None, 'full', 'highlighted', 'annotate'):
+        axs['v_sep_disp'].annotate(
+            'Chromosome\nSegregation',
+            # Do it a little below the top right
+            xy=(1, 0.85),
+            xycoords='axes fraction',
+            ha='right',
+            va='top',
+            fontsize=7,
+            # Set font color to 'C2'
+            color=('C2' if not dark_background else 'C2'),
+        )
 
     bivariate_plot_with_subsets(
         df = df,
@@ -953,6 +1158,7 @@ def show_volcano_and_bivariate_plots(
         color_controls = 'black',
         dark_background=dark_background,
         transparent_background=transparent_background,
+        layer=layer,
     )
     axs['b_length'].set_ylim(None, 6.5)
 
@@ -980,6 +1186,7 @@ def show_volcano_and_bivariate_plots(
         color_controls = 'black',
         dark_background=dark_background,
         transparent_background=transparent_background,
+        layer=layer,
     )
     # Set yticks to [1.15, 1.20, 1.25, 1.30]
     axs['b_width'].set_yticks([1.15, 1.20, 1.25, 1.30])
@@ -1010,6 +1217,7 @@ def show_volcano_and_bivariate_plots(
         color_controls = 'black',
         dark_background=dark_background,
         transparent_background=transparent_background,
+        layer=layer,
     )
     axs['b_sep_disp'].set_xlim(2, 6.5)
 

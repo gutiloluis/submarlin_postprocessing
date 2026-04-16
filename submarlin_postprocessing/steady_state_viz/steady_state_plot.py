@@ -82,10 +82,12 @@ steady_state_viz.show_all_variables_histograms(
         'lLAG10': dfp_b.loc[lambda df_: ~df_['opLAG2_id'].isna(), :],
     },
     label_dict=filepaths.long_labels_no_est,
-    save_figure=False,
+    save_figure=True,  
     dark_background=True,
     log=True,
     transparent_background=True,
+    layer='full',
+    filename=filepaths.headpath / 'bmarlin_manuscript/figure_2/histograms_variables_no-scientific-not_1_full.png'
 )
 #%%
 fig, ax = plt.subplots(1,1, figsize=(3,3))
@@ -103,6 +105,8 @@ highlight_grnas = {
     'murB': [2255, 2266, 2270],
 }
 
+layer = 'controls' #'controls'
+figure_name = 'mismatch_panels_' + layer + '.png'
 steady_state_viz.plot_mismatch_panels_multiple_genes(
     dfs = {'lLAG08': dfp_b},
     label_dict=filepaths.long_labels_no_est,
@@ -110,6 +114,8 @@ steady_state_viz.plot_mismatch_panels_multiple_genes(
     highlight_grnas=True,
     dark_background=True,
     transparent_background=True,
+    layer=layer,
+    filename=filepaths.headpath / 'bmarlin_manuscript/figure_2' / figure_name
 )
 
 #%% Sampling images
@@ -130,13 +136,18 @@ dfp_b
 filepaths.long_labels_no_est
 #%% Volcano and bivariate plots
 plt.style.use('steady_state.mplstyle')
+
+layer = 'annotate'
+filename = 'volcano_bivariate_plots_dark_'+layer+'.png'
 steady_state_viz.show_volcano_and_bivariate_plots(
     df=dfp_b,
     df_control_stats=df_control_stats,
     plot_metadata=plot_metadata,
     save_figure=True,
-    dark_background=False,
+    dark_background=True,
     transparent_background=True,
+    layer = layer,
+    filename=filepaths.figures_savepath / 'figure_2'/ filename
 )
 
 #%%
